@@ -1,2 +1,10 @@
+# Examples
 *.o
 hello-world
+
+# Debian packaging
+debian/build.debhelper.log
+debian/build.substvars
+debian/build/
+debian/debhelper-build-stamp
+debian/files
