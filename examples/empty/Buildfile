@@ -1,0 +1,7 @@
+# Build uses Buildfiles to hold build declarations and rules.
+#
+# A Buildfile is really a Makefile but has some implicit things defined.  For
+# instance, run "build help" to see a built-in target.  The "build" command is
+# a thin wrapper around "make", and accepts most of the same arguments. For
+# example, you can print commands instead of running them by passing the "-n"
+# flag.

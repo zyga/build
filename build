@@ -1,0 +1,25 @@
+#!/bin/sh
+set -u
+BUILD_INCLUDE_DIR="$(dirname -- "$(realpath -- "$0")")/include"
+if [ ! -f "$BUILD_INCLUDE_DIR/internal/core.before"  ]; then
+	BUILD_INCLUDE_DIR=/usr/share/build/include
+fi
+WHERE=.
+while [ ! -f "$WHERE/Buildfile" ] && [ "$(realpath -- "$WHERE")" != / ]; do WHERE="$WHERE/.."; done
+if [ ! -f "$WHERE/Buildfile" ]; then
+	echo "cannot find Buildfile"
+	exit 1
+fi
+
+MAKEFILES="$BUILD_INCLUDE_DIR/internal/core.before $WHERE/Buildfile $BUILD_INCLUDE_DIR/internal/core.after " \
+	exec make \
+	--jobs \
+	--no-builtin-rules \
+	--no-builtin-variables \
+	--warn-undefined-variables \
+	--include-dir="$BUILD_INCLUDE_DIR" \
+	--no-print-directory \
+	--output-sync=target \
+	--directory="$WHERE" \
+	--file /dev/null \
+	"$@"

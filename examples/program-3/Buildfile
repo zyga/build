@@ -1,0 +1,19 @@
+# The pkg-config module allows your programs to access all installed pkg-config
+# files. This module must be included after the C module and depends on the
+# externally-provided pkg-config executable (you need to install it with a
+# package manager).
+#
+# You can specify the list of pkg-config modules to link into a program with
+# the use of target_PKG_CONFIG_MODULES variable.  Each module may be linked
+# statically or dynamically. You can control this by setting
+# target_PKG_CONFIG_MODULE_mod_LINK to either "static" or "dynamic" (default).
+include C
+include UNIX
+include pkg-config
+
+PROGRAMS = hello-world
+hello-world_SOURCES = hello.c
+hello-world_PKG_CONFIG_MODULES = libcap
+# Uncomment this to link libcap statically. Note that you may need additional
+# dependencies, such as libattr1-dev.
+# hello-world_PKG_CONFIG_MODULE_libcap_LINK = static

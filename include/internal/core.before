@@ -1,0 +1,25 @@
+# Default goal (overrides any user rules)
+.DEFAULT_GOAL = all
+# Disable old suffix rules (faster)
+.SUFFIXES =
+# Internal variable used for tracking variables with possible typos.
+__build_possible_typos ?=
+# Internal list of known variables / known variable patterns
+__build_known_vars += .PHONY .DEFAULT_GOAL .SUFFIXES
+__build_known_vars += __build_possible_typos __build_known_vars __build_unknown_vars __build_module_%
+__build_known_vars += MAKEFILE_LIST MAKEFLAGS SHELL CURDIR
+# Phony targets that just correspond to generic actions
+.PHONY: all clean install defs
+
+.PHONY: help
+help::
+	@echo "Build provides the following actions:"
+	@echo " build all       - build/compile/generate everything"
+	@echo " build clean     - remove all generated content"
+	@echo " build install   - install everything, building it if necessary"
+	@echo " build defs      - show all definitions"
+	@echo " build version   - show version of build itself"
+
+.PHONY: version
+version::
+	@echo "Build version 0.1 alpha"
