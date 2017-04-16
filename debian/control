@@ -1,0 +1,19 @@
+Source: build
+Section: devel
+Priority: optional
+Maintainer: Zygmunt Krynicki <me@zygoon.pl>
+Standards-Version: 3.9.7
+Homepage: https://github.com/zyga/build
+Vcs-Browser: https://github.com/zyga/build
+Vcs-Git: https://github.com/zyga/build.git
+Build-Depends: debhelper (>= 9)
+
+Package: build
+Architecture: all
+Depends: dash, make, ${misc:Depends}
+Recommends: pkg-config
+Description: pure-make build system
+ Build is a simple build system that is inspired by autotools but
+ has lower complexity, better defaults, saner behavior and faster
+ builds.
+ Build is still very experimental so please use it with caution.
