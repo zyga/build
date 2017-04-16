@@ -1,0 +1,106 @@
+## Build module for C/C++ programs
+##
+## This module defines two top-level variables: PROGRAMS and LIBRARIES
+## Each program or library listed there has a number of additional properties,
+## out of which the SOURCES property is mandatory. See below for details.
+
+# List of C/C++ programs to build.
+PROGRAMS ?=
+# List of static/shared libraries to build.
+LIBRARIES ?=
+
+# CROSS_COMPILE - simple cross-compiler support.
+# Can be set to the arch triplet of the C/C++ cross-compiler.
+CROSS_COMPILE ?=
+# EXE - suffix of compiled executables.
+# It automatically defaults to .exe if cross-compiling for Windows.
+EXE = $(if $(or $(findstring x86_64-w64-mingw32,$(CROSS_COMPILE)),$(findstring i686-w64-mingw32,$(CROSS_COMPILE))),.exe)
+
+# Typical variables influencing C/C++ builds.
+
+# CC - name of the C compiler.
+CC ?= $(if $(CROSS_COMPILE),$(CROSS_COMPILE)-gcc,cc)
+# CC - name of the C++ compiler.
+CXX ?= $(if $(CROSS_COMPILE),$(CROSS_COMPILE)-g++,c++)
+
+# CPPFLAGS - flags for the preprocessor.
+CPPFLAGS ?=
+# CFLAGS - flags for the C compiler.
+CFLAGS ?= -Wall
+# CXXFLAGS - flags for the C++ compiler.
+CXXFLAGS ?=
+# LDFLAGS - flags for the linker.
+LDFLAGS ?=
+# LDLIBS - list of libraries to link with.
+LDLIBS ?=
+
+# List of variables supported by the C/C++ target.
+# This is used to search for typos and mistakes.
+_c_target_vars += SOURCES OBJECTS COMPILER CFLAGS CXXFLAGS CPPFLAGS LDFLAGS LDLIBS
+_c_target_private_vars += sources_c sources_c++ sources_wat objects_c objects_c++ reserved
+
+# Notify about possible typos in variables related to PROGRAMS.
+__build_possible_typos += $(filter-out $(addsuffix _%,$(PROGRAMS)),$(filter $(addprefix %_,$(_c_target_vars)),$(.VARIABLES)))
+# Extend the list of known variables
+__build_known_vars += CC CFLAGS CPPFLAGS CROSS_COMPILE CXX CXXFLAGS DESTDIR EXE LDFLAGS LDLIBS LIBRARIES PROGRAMS
+__build_known_vars += $(addprefix %_,$(_c_target_vars))
+__build_known_vars += $(addprefix _c_%_,$(_c_target_private_vars))
+__build_known_vars += _c_program_template _c_target_vars _c_target_private_vars
+
+# Compiling and linking C/C++ programs
+define _c_program_template
+$1_SOURCES ?= $$(error set $1_SOURCES to list of source files)
+_c_$1_sources_c = $$(filter %.c,$$($1_SOURCES))
+_c_$1_sources_c++ = $$(filter %.cpp,$$($1_SOURCES))
+_c_$1_sources_wat = $$(filter-out %.c %.cpp,$$($1_SOURCES))
+_c_$1_objects_c = $$(patsubst %.c,$1_%.o,$$(_c_$1_sources_c))
+_c_$1_objects_c++ ?= $$(patsubst %.cpp,$1_%.o,$$(_c_$1_sources_c++))
+$1_OBJECTS += $$(_c_$1_objects_c) $$(_c_$1_objects_c++)
+$$(if $$(_c_$1_sources_wat),$$(error $1_SOURCES contains $$(_c_$1_sources_wat) but only *.c/*.cpp files are supported))
+$1_COMPILER ?= $$(if $$(_c_$1_sources_c++),$$(CXX),$$(CC))
+
+# Per-program set of C/C++ compiler flags.
+$1_CPPFLAGS += $(CPPFLAGS)
+$1_CFLAGS += $(CFLAGS)
+$1_CXXFLAGS += $(CXXFLAGS)
+$1_LDFLAGS += $(LDFLAGS)
+$1_LDLIBS += $(LDLIBS)
+
+$$(_c_$1_objects_c): $1_%.o: %.c
+	$$(strip $$(CC) -c $$($1_CPPFLAGS) $$($1_CFLAGS) $$< -o $$@)
+
+$$(_c_$1_objects_c++): $1_%.o: %.cpp
+	$$(strip $$(CXX) -c $$($1_CPPFLAGS) $$($1_CFLAGS) $$($1_CXXFLAGS) $$< -o $$@)
+
+$1$$(EXE): $$($1_OBJECTS)
+	$$(strip $$($1_COMPILER) $$($1_LDFLAGS) $$^ $$($1_LDLIBS) -o $$@)
+
+# Build this executable when building everything.
+all:: $1$$(EXE)
+
+# Clean this executable as well as all associated objects when cleaning.
+clean::
+	rm -f -- $1$$(EXE)
+	rm -f -- $$($1_OBJECTS)
+
+# Show various definitions when asked.
+defs::
+	@echo 'executable $1'
+	@$$(foreach var,$$(filter $1_%,$$(sort $$(.VARIABLES))),$$(if $$($$(var)),echo '  $$(patsubst $1_%,%,$$(var)): $$($$(var))';))
+
+# Look for variables that are in the reserved space but are unrecognized.
+_c_$1_reserved=$$(filter-out $(addprefix $1_,$(_c_target_vars)),$$(filter $1_%,$$(.VARIABLES)))
+$$(if $$(_c_$1_reserved),$$(error unrecognized variables in reserved namespace: $$(_c_$1_reserved)))
+
+endef # _c_program_template
+
+# Build module definition.
+#
+# This is executed by Build after everything is imported and the user Buildfile
+# has been read.
+#
+# We use this to define all the program and library rules.
+define __build_module_C
+$(foreach prog,$(PROGRAMS),$(eval $(call _c_program_template,$(prog))))
+$(if $(LIBRARIES),$(error LIBRARIES are supported yet))
+endef # __build_module_C

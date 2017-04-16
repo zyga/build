@@ -1,0 +1,50 @@
+## Build module for various UNIXy directories.
+##
+## Importing this module will enable the "install" target
+## for all PROGRAMS.
+$(if $(findstring __build_module_C,$(.VARIABLES)),,$(error please import the C module first))
+
+# Extend the list of known variables
+__build_known_vars += DESTDIR bindir libdir libexecdir prefix sbindir
+__build_known_vars += _unix_program_install_template
+
+# Allow using the target_INSTALL_{DIR,MODE,STRIP} variable for specifying install behavior.
+_c_target_vars += INSTALL_DIR INSTALL_MODE INSTALL_STRIP
+
+# A "prefix" that is baked into everything. This defines installation layout.
+prefix ?= /usr/local
+# A destination directory that is prepended to everything when installing.
+DESTDIR ?=
+
+# Directories for commonly installed content.
+bindir ?= $(prefix)/bin
+libdir ?= $(prefix)/lib
+libexecdir ?= $(prefix)/libexec
+sbindir ?= $(prefix)/sbin
+
+# Template for installing UNIX programs.
+define _unix_program_install_template
+
+# Per-program installation details (location, mode, strip).
+$1_INSTALL_DIR ?= $$(bindir)
+$1_INSTALL_MODE ?=
+$1_INSTALL_STRIP ?=
+
+# Install this executable into the appropriate location.
+install:: $1$$(EXE)
+	$$(strip install \
+		$$(if $$($1_INSTALL_STRIP),--strip) \
+		$$(if $$($1_INSTALL_MODE),--mode=$$($1_INSTALL_MODE)) \
+		-D --target-directory=$$(DESTDIR)$$($1_INSTALL_DIR) $$^)
+
+endef # _unix_program_install_template
+
+# Build module definition.
+#
+# This is executed by Build after everything is imported and the user Buildfile
+# has been read.
+#
+# We use this to define install rules for all programs.
+define __build_module_UNIX
+$(foreach prog,$(PROGRAMS),$(eval $(call _unix_program_install_template,$(prog))))
+endef # __build_module_UNIX

@@ -1,0 +1,96 @@
+## Build module for using pkg-config
+$(if $(findstring __build_module_C,$(.VARIABLES)),,$(error please import the C module first))
+$(if $(shell which pkg-config),,$(error please install the pkg-config program))
+
+# Allow using the target_PKG_CONFIG_MODULES variable for listing required pkg-config modules.
+_c_target_vars += PKG_CONFIG_MODULES PKG_CONFIG_MODULE_%_LINK
+
+:# Extend the list of known variables
+__build_known_vars += $(addprefix _pkg_config_,module_template program_module_template program_template modules %_exists %_modversion %_static_cflags %_static_libs %_dynamic_cflags %_dynamic_libs)
+
+# Collect all pkg-config modules we need to query.
+_pkg_config_modules = $(sort $(foreach prog,$(PROGRAMS),$(value $(prog)_PKG_CONFIG_MODULES)))
+
+# Template for querying pkg-config module.
+# $1 - module
+define _pkg_config_module_template
+_pkg_config_$1_exists := $$(shell pkg-config --exists $1 && echo yes)
+_pkg_config_$1_modversion := $$(shell pkg-config --modversion $1)
+_pkg_config_$1_dynamic_cflags := $$(shell pkg-config --cflags $1)
+_pkg_config_$1_dynamic_libs := $$(shell pkg-config --libs $1)
+_pkg_config_$1_static_libs := $$(shell pkg-config --static --libs $1)
+_pkg_config_$1_static_cflags := $$(shell pkg-config --static --cflags $1)
+
+# Show various definitions when asked.
+.ONESHELL: defs
+defs::
+	@echo 'pkg-config module $1'
+	@echo '  exists: $$(_pkg_config_$1_exists)'
+	@echo '  module version: $$(_pkg_config_$1_modversion)'
+	@echo '  for dynamic linking:'
+	@echo '    cflags: $$(_pkg_config_$1_dynamic_cflags)'
+	@echo '    libs:   $$(_pkg_config_$1_dynamic_libs)'
+	@echo '  for static linking:'
+	@echo '    cflags: $$(_pkg_config_$1_static_cflags)'
+	@echo '    libs :  $$(_pkg_config_$1_static_libs)'
+
+endef # _pkg_config_module_template
+
+# Template for processing pkg-config module on a given C/C++ program.
+# $1 - program
+# $2 - module
+#
+# Depending on how the given module is intended to be linked different
+# variables are accessed. By default everything is linked dynamically but it
+# can be changed by setting target_PKG_CONFIG_MODULE_module_LINK = static
+define _pkg_config_program_module_template
+
+# Default linking mode
+$1_PKG_CONFIG_MODULE_$2_LINK ?= dynamic
+_pkg_config_$1_exists ?=
+__build_known_vars += $1_PKG_CONFIG_MODULE_$2_LINK
+
+# If required module does not exist print a sensible error message.
+$$(if $$(_pkg_config_$2_exists),,$$(error program $1 requires pkg-config module $2))
+
+# Depending on how the module is supposed to be linked add appropriate flags.
+ifeq ($$(strip $$($1_PKG_CONFIG_MODULE_$2_LINK)),dynamic)
+$1_CPPFLAGS += $$(filter -I% -D%,$$(_pkg_config_$2_dynamic_cflags))
+$1_CFLAGS += $$(filter-out -I% -D%,$$(_pkg_config_$2_dynamic_cflags))
+$1_LDFLAGS += $$(filter -L%,$$(_pkg_config_$2_dynamic_libs))
+$1_LDLIBS += $$(filter-out -L%,$$(_pkg_config_$2_dynamic_libs))
+else ifeq ($$(strip $$($1_PKG_CONFIG_MODULE_$2_LINK)),static)
+$1_CPPFLAGS += $$(filter -I% -D%,$$(_pkg_config_$2_static_cflags))
+$1_CFLAGS += $$(filter-out -I% -D%,$$(_pkg_config_$2_static_cflags))
+$1_LDFLAGS += $$(filter -L%,$$(_pkg_config_$2_static_libs))
+$1_LDLIBS += -Wl,-Bstatic $$(filter-out -L%,$$(_pkg_config_$2_static_libs)) -Wl,-Bdynamic
+else
+$$(error unrecognized value of $1_PKG_CONFIG_MODULE_$2_LINK "$$(value $1_PKG_CONFIG_MODULE_$2_LINK)": expected either static or dynamic)
+endif
+
+endef # _pkg_config_program_module_template
+
+# Template for pkg-config awareness of C/C++ program.
+# $1 - program
+define _pkg_config_program_template
+
+# Default list of pkg-config modules to link
+$1_PKG_CONFIG_MODULES ?=
+
+# Add information about each module to the program.
+$$(foreach mod,$$($1_PKG_CONFIG_MODULES),$$(eval $$(call _pkg_config_program_module_template,$1,$$(mod))))
+
+endef # _pkg_config_program_template
+
+# Build module definition.
+#
+# This is executed by Build after everything is imported and the user Buildfile
+# has been read.
+#
+# We use this to query all pkg-config modules referenced by all programs and to
+# augment the variable declarations used by the C module with data obtained
+# from pkg-config.
+define __build_module_pkg-config
+$(foreach mod,$(_pkg_config_modules),$(eval $(call _pkg_config_module_template,$(mod))))
+$(foreach prog,$(PROGRAMS),$(eval $(call _pkg_config_program_template,$(prog))))
+endef # __build_module_pkg-config

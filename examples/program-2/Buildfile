@@ -1,0 +1,26 @@
+# The UNIX module contains rules for installing programs on a typical UNIX
+# system. The same module also respects several variables, such as prefix,
+# bindir, or DESTDIR.
+#
+# Programs can customize their install behavior through variables:
+# - target_INSTALL_DIR
+# - target_INSTALL_MODE
+# - target_INSTALL_STRIP
+# Experiment with different values by editing the code below. Remember that you
+# can run "build -n install" to see what would have happened without actually
+# running any commands.  You also can set variables on command line. For
+# example, try to see what happens when you run "build -n install DESTDIR=/tmp/foo"
+include C
+include UNIX
+
+PROGRAMS = hello-world
+hello-world_SOURCES = hello.c
+
+# Typical variables can be used to install to another directory.
+hello-world_INSTALL_DIR = $(libexecdir)
+
+# The installation mode is customizable
+hello-world_INSTALL_MODE = 0700
+
+# We can also strip when installing.
+hello-world_INSTALL_STRIP = yes
