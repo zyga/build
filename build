@@ -2,10 +2,10 @@
 set -u
 
 # Find include directory
-if [ -n "$SNAP" ]; then
+if [ -n "${SNAP:-}" ]; then
 	# Run from snap
 	BUILD_INCLUDE_DIR="$SNAP/include"
-elif [ -z "$BUILD_INCLUDE_DIR" ]; then
+elif [ -z "${BUILD_INCLUDE_DIR:-}" ]; then
 	# Run from source
 	BUILD_INCLUDE_DIR="$(dirname -- "$(realpath -- "$0")")/include"
 	if [ ! -f "$BUILD_INCLUDE_DIR/internal/core.before"  ]; then
