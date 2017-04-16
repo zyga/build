@@ -8,3 +8,9 @@ debian/build.substvars
 debian/build/
 debian/debhelper-build-stamp
 debian/files
+
+# Snapcraft packaging
+*.snap
+parts/
+prime/
+stage/
