@@ -5,7 +5,7 @@ $(if $(shell which pkg-config),,$(error please install the pkg-config program))
 # Allow using the target_PKG_CONFIG_MODULES variable for listing required pkg-config modules.
 _c_target_vars += PKG_CONFIG_MODULES PKG_CONFIG_MODULE_%_LINK
 
-:# Extend the list of known variables
+# Extend the list of known variables
 __build_known_vars += $(addprefix _pkg_config_,module_template program_module_template program_template modules %_exists %_modversion %_static_cflags %_static_libs %_dynamic_cflags %_dynamic_libs)
 
 # Collect all pkg-config modules we need to query.
