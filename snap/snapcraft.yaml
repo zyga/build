@@ -1,0 +1,22 @@
+name: build 
+version: '0.1a'
+summary: pure-make build system 
+description: |
+ Build is a simple build system that is inspired by autotools but
+ has lower complexity, better defaults, saner behavior and faster
+ builds.
+ Build is still very experimental so please use it with caution.
+architectures: [all]
+grade: stable
+confinement: classic
+apps:
+    build:
+        command: build
+        plugs: [home]
+parts:
+  build:
+    source: .
+    plugin: dump
+    snap:
+        - include
+        - build

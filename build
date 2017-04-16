@@ -1,9 +1,20 @@
 #!/bin/sh
 set -u
-BUILD_INCLUDE_DIR="$(dirname -- "$(realpath -- "$0")")/include"
-if [ ! -f "$BUILD_INCLUDE_DIR/internal/core.before"  ]; then
-	BUILD_INCLUDE_DIR=/usr/share/build/include
+
+# Find include directory
+if [ -n "$SNAP" ]; then
+	# Run from snap
+	BUILD_INCLUDE_DIR="$SNAP/include"
+elif [ -z "$BUILD_INCLUDE_DIR" ]; then
+	# Run from source
+	BUILD_INCLUDE_DIR="$(dirname -- "$(realpath -- "$0")")/include"
+	if [ ! -f "$BUILD_INCLUDE_DIR/internal/core.before"  ]; then
+		# Run from classic package
+		BUILD_INCLUDE_DIR=/usr/share/build/include
+	fi
 fi
+
+# Find Buildfile
 WHERE=.
 while [ ! -f "$WHERE/Buildfile" ] && [ "$(realpath -- "$WHERE")" != / ]; do WHERE="$WHERE/.."; done
 if [ ! -f "$WHERE/Buildfile" ]; then
@@ -11,6 +22,7 @@ if [ ! -f "$WHERE/Buildfile" ]; then
 	exit 1
 fi
 
+# Run GNU make with all the right options.
 MAKEFILES="$BUILD_INCLUDE_DIR/internal/core.before $WHERE/Buildfile $BUILD_INCLUDE_DIR/internal/core.after " \
 	exec make \
 	--jobs \
