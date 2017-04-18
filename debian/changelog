@@ -1,5 +1,14 @@
+build (0.1b) xenial; urgency=medium
+
+  * Add support for out-of-tree builds.
+  * Add support for configuration system ala autoconf.
+  * Add extra examples to illustrate usage.
+  * Improve command line argument parsing.
+
+ -- Zygmunt Krynicki <zygmunt.krynicki@canonical.com>  Tue, 18 Apr 2017 03:33:23 +0200
+
 build (0.1a) xenial; urgency=medium
 
-  * Initial release 
+  * Initial release
 
  -- Zygmunt Krynicki <zygmunt.krynicki@canonical.com>  Sun, 16 Apr 2017 04:27:55 +0200

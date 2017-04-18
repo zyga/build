@@ -1,7 +1,6 @@
 # Build looks very carefully at all the variables and makes sure there are no
 # hidden typos or unrecognized variables.
 include C
-include UNIX
 
 PROGRAMS = hello-world
 hello-world_SOURCES = hello.c

@@ -1,0 +1,9 @@
+include C
+include configure
+
+# You can define your own checker "foo" by creating a project called foo.check
+# and placing it in the .build/ directory next to your Buildfile.
+CHECKERS = have-math-h have-foobar-h 
+
+PROGRAMS = hello-world
+hello-world_SOURCES = main.c

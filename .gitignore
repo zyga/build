@@ -1,6 +1,8 @@
 # Examples
 *.o
+*.exe
 hello-world
+test
 
 # Debian packaging
 debian/build.debhelper.log

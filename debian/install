@@ -1,2 +1,4 @@
 build usr/bin
-include usr/share/build
+checkers usr/share/build/
+core usr/share/build/
+include usr/share/build/

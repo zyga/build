@@ -1,0 +1,5 @@
+include C
+include configure
+
+PROGRAMS = hello-world
+hello-world_SOURCES = main.c
