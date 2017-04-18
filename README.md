@@ -9,7 +9,6 @@ libraries.
 # Installation
 
 Copy the source code somewhere and add "build" to your PATH. Alternatively
-package the "include" directory as "/usr/share/build/include" and "build" as
-"/usr/bin/build".
+build and install the Debian package.
 
 You will need GNU "make" and you can also take advantage of "pkg-config".
