@@ -1,0 +1,69 @@
+## Build module for build configuration system.
+$(if $(findstring __build_module_C,$(.VARIABLES)),,$(error please import the C module first))
+
+CHECKERS ?=
+
+_configure_implicit_checkers ?=
+__build_known_vars += CHECKERS
+__build_known_vars += _configure_known_checkers
+
+.PRECIOUS: .configure/%.check
+.configure/%.check:
+	@mkdir -p $@
+
+# Pattern rule for running checkers from build distribution.
+.configure/%.check/config.h.part: $(BUILD_DATA_DIR)/checkers/%.check | .configure/%.check
+	@+build --oot $^ --in .configure/$*.check describe
+	@+build --oot $^ --in .configure/$*.check check >.configure/$*.check/configure.log 2>&1 || :
+	@+build --oot $^ --in .configure/$*.check config.h.part
+
+# Pattern rule for running checkers from project tree.
+.configure/%.check/config.h.part: $(BUILD_PROJECT_ROOT)/.build/%.check | .configure/%.check
+	@+build --oot $^ --in .configure/$*.check describe
+	@+build --oot $^ --in .configure/$*.check check >.configure/$*.check/configure.log 2>&1 || :
+	@+build --oot $^ --in .configure/$*.check config.h.part
+
+# Clean generated config.h file and entire .configure directory when cleaning.
+.PHONY: clean
+clean::
+	rm -f config.h
+	rm -rf .configure
+
+# Print checkers used when asked for defs.
+# Explicitly mark implicit checkers so that people get the idea.
+.PHONY: defs
+defs::
+	@echo "autoconf-style checkers used:"
+	@$(foreach checker,$(sort $(CHECKERS)),echo '  - $(checker) $(if $(findstring $(checker),$(_configure_implicit_checkers)),(implicit))';)
+
+.PHONY: help-checkers
+help-checkers:
+	@echo "build knows about the following checkers:"
+	@$(foreach checker,$(_configure_known_checkers),echo '- $(notdir $(checker))';)
+
+# Build module definition.
+#
+# This is executed by Build after everything is imported and the user Buildfile
+# has been read.
+define __build_module_configure
+
+_configure_known_checkers := $(sort $(wildcard $(BUILD_DATA_DIR)/checkers/*.check) $(wildcard $(BUILD_PROJECT_ROOT)/.build/*.check))
+
+# The C module suggests implicit checkers based on source files used.
+CHECKERS += $(sort $(_configure_implicit_checkers))
+
+# Validate that all CHECKERS are correct.
+$(foreach checker,$(CHECKERS),$(if $(findstring $(checker),$(_configure_known_checkers)),,$(error CHECKERS referenced unknown checker $(checker))))
+
+# Make each object file depend on config.h
+$(foreach prog,$(PROGRAMS),$($(prog)_OBJECTS)): config.h
+
+# Make each object file know that it can include config.h
+$(foreach prog,$(PROGRAMS),$(eval $(prog)_CPPFLAGS += -DHAVE_CONFIG_H))
+
+# Generate C header file with configuration data.
+config.h: $(sort $(foreach checker,$(CHECKERS),.configure/$(checker).check/config.h.part))
+	@echo "aggregating build configuration data"
+	@$(if $^,cat $^ >,truncate --size 0) $@
+
+endef # __build_module_configure

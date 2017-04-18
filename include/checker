@@ -1,0 +1,51 @@
+## Build module for autoconf-style checkers.
+$(if $(findstring __build_module_C,$(.VARIABLES)),,$(error please import the C module first))
+
+__build_known_vars += DESCRIPTION C_MACRO
+C_MACRO ?=
+
+# Define implicit program.
+PROGRAMS = test
+test_SOURCES = $(wildcard $(BUILD_PROJECT_ROOT)/*.c $(BUILD_PROJECT_ROOT)/*.cpp)
+
+# Add a check target that is used by the build system.
+.PHONY: check
+check:: test$(EXE)
+ifneq ($(CROSS_COMPILE),)
+	@echo "not running test program when cross-compiling"
+else
+	./$^
+endif
+
+# Generate a fragment of a C header file.
+all:: config.h.part
+
+clean::
+	rm -f config.h.part
+
+# Add description target that build references.
+.PHONY: describe
+describe:
+	@echo "$(DESCRIPTION)"
+
+# Build module definition.
+#
+# This is executed by Build after everything is imported and the user Buildfile
+# has been read.
+define __build_module_checker
+# Validate DESCRIPTION variable.
+DESCRIPTION ?= $(error define DESCRIPTION for checker)
+
+# Write a fragment of the config.h file if we managed to compile the test program.
+config.h.part:
+ifeq ($(C_MACRO),)
+	@truncate --size 0 $@
+else
+	@if [ -e "test$(EXE)" ]; then \
+		echo '#define $(C_MACRO) 1' > $@; \
+	else \
+		echo '#undef $(C_MACRO)' > $@; \
+	fi
+endif
+
+endef

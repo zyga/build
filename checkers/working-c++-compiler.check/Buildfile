@@ -1,0 +1,4 @@
+include C
+include checker
+
+DESCRIPTION = checking if the C++ compiler ($(CXX)) can produce executables

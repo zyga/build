@@ -1,6 +1,6 @@
 .\" Man page generated from reStructuredText.
 .
-.TH BUILD 1 "2017-04-16" "0.1a" ""
+.TH BUILD 1 "2017-04-18" "0.1b" ""
 .SH NAME
 build \- pure-make build system
 .
@@ -43,27 +43,90 @@ traditional \fIMakefile\fP and it comes with a set of rules for building C/C++
 programs.
 .SH OPTIONS
 .sp
-The \fIbuild\fP program takes the same options as \fImake\fP with the following
-exceptions.
+\fIbuild\fP takes the following command line options:
+.INDENT 0.0
+.TP
+.B \fI\-\-help\fP:
+Display available built\-in help.
+.TP
+.B \fI\-\-version\fP:
+Display version of \fIbuild\fP\&.
+.TP
+.B \fI\-n\fP:
+Don\(aqt build anything, just print what you\(aqd have done.
+.TP
+.B \fI\-q\fP:
+Don\(aqt build anything but set the exit code to indicate if there is
+something to do.
+.TP
+.B \fI\-\-out\-of\-tree DIR\fP:
+Build a project out of source tree. Built files will be placed in the
+current directory unless the \fI\-\-in\fP option was used to change that
+location. The specified directory must contain the \fIBuildfile\fP\&.
+.TP
+.B \fI\-\-in DIR\fP:
+Put all results in the specified directory. The directory is created if
+necessary. When used together with \fI\-\-oot\fP the directory where \fIbuild\fP is
+invoked is totally detached from where it will write results to and where
+it loads source code from.
+.UNINDENT
 .sp
-The \fI\-\-file\fP and \fI\-\-directory\fP options are used as internally and are
-unsupported. The \fI\-\-jobs\fP (or \fI\-j\fP) option is handled automatically. Several
-less common Make options are enabled by default. For details see the source
-code of the \fIbuild\fP script.
+\fIbuild\fP understands several default targets:
+.INDENT 0.0
+.TP
+.B \fIall\fP (default):
+Build everything, configuring the source tree if necessary
+.TP
+.B \fIclean\fP or \fIc\fP:
+Clean all build results.
+.TP
+.B \fIinstall\fP or \fIi\fP:
+Install all installable files (requires the UNIX module).
+.TP
+.B \fIdefs\fP:
+Show extended information about what is defined in \fIBuildfile\fP\&.
+.UNINDENT
 .SH ENVIRONMENT
 .sp
-Internally \fIbuild\fP relies on \fIBUILD_INCLUDE_DIR\fP and \fIMAKEFLAGS\fP and those
-variables are reserved.
+Internally \fIbuild\fP relies on \fIBUILD_INCLUDE_DIR\fP, \fIBUILD_PROJECT_ROOT\fP and
+\fIMAKEFLAGS\fP and those variables are reserved.
+.sp
+In addition the \fIC\fP module understands a number of typical variables such as:
+\fICC\fP, \fICXX\fP, \fICFLAGS\fP, \fICXXFLAGS\fP, \fICPPFLAGS\fP, \fILDFLAGS\fP, \fILDLIBS\fP or
+\fICROSS_COMPILE\fP\&.
+.sp
+In addition the \fIUNIX\fP module understands \fIDESTDIR\fP and \fIprefix\fP as well as
+several variables derived off prefix like \fIbindir\fP, \fIlibdir\fP and others.
+.sp
+The \fIpkg\-config\fP module is implicitly influenced by multiple variables that
+affect pkg\-config itself. Refer to pkg\-config documentation for details.
 .SH FILES
 .sp
 \fIbuild\fP reads \fIBuildfile\fP as found in the current or any parent directory.
 .sp
-\fI/usr/share/build/include/\fP
+In addition the directory that contains the \fIBuildfile\fP can also contain:
 .INDENT 0.0
-.INDENT 3.5
-Location of build modules. You can install your custom build modules here.
-See the build\-in C module for inspiration.
+.TP
+.B \fI\&.build/*.check\fP:
+Location of additional, project specific checkers.
+.TP
+.B \fI\&.configure\fP:
+Directory with results of the configuration process (removed by \fIbuild
+clean\fP). Each subdirectory inside is named after a specific checker and
+contains build artefacts, log files and a fragment of \fIconfig.h\fP\&.
+.TP
+.B \fIconfig.h\fP:
+Automatically generated configuration file (removed by \fIbuild clean\fP)
 .UNINDENT
+.sp
+System wide directories include:
+.INDENT 0.0
+.TP
+.B \fI/usr/share/build/include/\fP:
+Location of build modules. You can install your custom build modules here.
+.TP
+.B \fI/usr/share/build/checkers/\fP:
+Location of autoconf\-like checkers that are used by the _configure_ module.
 .UNINDENT
 .SH BUGS
 .sp

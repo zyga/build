@@ -12,6 +12,7 @@ LIBRARIES ?=
 # CROSS_COMPILE - simple cross-compiler support.
 # Can be set to the arch triplet of the C/C++ cross-compiler.
 CROSS_COMPILE ?=
+export CROSS_COMPILE
 # EXE - suffix of compiled executables.
 # It automatically defaults to .exe if cross-compiling for Windows.
 EXE = $(if $(or $(findstring x86_64-w64-mingw32,$(CROSS_COMPILE)),$(findstring i686-w64-mingw32,$(CROSS_COMPILE))),.exe)
@@ -20,19 +21,26 @@ EXE = $(if $(or $(findstring x86_64-w64-mingw32,$(CROSS_COMPILE)),$(findstring i
 
 # CC - name of the C compiler.
 CC ?= $(if $(CROSS_COMPILE),$(CROSS_COMPILE)-gcc,cc)
+export CC
 # CC - name of the C++ compiler.
 CXX ?= $(if $(CROSS_COMPILE),$(CROSS_COMPILE)-g++,c++)
+export CXX
 
 # CPPFLAGS - flags for the preprocessor.
 CPPFLAGS ?=
+export CPPFLAGS
 # CFLAGS - flags for the C compiler.
 CFLAGS ?= -Wall
+export CFLAGS
 # CXXFLAGS - flags for the C++ compiler.
 CXXFLAGS ?=
+export CXXFLAGS
 # LDFLAGS - flags for the linker.
 LDFLAGS ?=
+export LDFLAGS
 # LDLIBS - list of libraries to link with.
 LDLIBS ?=
+export LDLIBS
 
 # List of variables supported by the C/C++ target.
 # This is used to search for typos and mistakes.
@@ -46,6 +54,7 @@ __build_known_vars += CC CFLAGS CPPFLAGS CROSS_COMPILE CXX CXXFLAGS DESTDIR EXE 
 __build_known_vars += $(addprefix %_,$(_c_target_vars))
 __build_known_vars += $(addprefix _c_%_,$(_c_target_private_vars))
 __build_known_vars += _c_program_template _c_target_vars _c_target_private_vars
+__build_known_vars += _configure_implicit_checkers
 
 # Compiling and linking C/C++ programs
 define _c_program_template
@@ -53,10 +62,11 @@ $1_SOURCES ?= $$(error set $1_SOURCES to list of source files)
 _c_$1_sources_c = $$(filter %.c,$$($1_SOURCES))
 _c_$1_sources_c++ = $$(filter %.cpp,$$($1_SOURCES))
 _c_$1_sources_wat = $$(filter-out %.c %.cpp,$$($1_SOURCES))
-_c_$1_objects_c = $$(patsubst %.c,$1_%.o,$$(_c_$1_sources_c))
-_c_$1_objects_c++ ?= $$(patsubst %.cpp,$1_%.o,$$(_c_$1_sources_c++))
+_c_$1_objects_c = $$(patsubst %.c,$1_%.o,$$(notdir $$(_c_$1_sources_c)))
+_c_$1_objects_c++ ?= $$(patsubst %.cpp,$1_%.o,$$(notdir $$(_c_$1_sources_c++)))
 $1_OBJECTS += $$(_c_$1_objects_c) $$(_c_$1_objects_c++)
 $$(if $$(_c_$1_sources_wat),$$(error $1_SOURCES contains $$(_c_$1_sources_wat) but only *.c/*.cpp files are supported))
+
 $1_COMPILER ?= $$(if $$(_c_$1_sources_c++),$$(CXX),$$(CC))
 
 # Per-program set of C/C++ compiler flags.
@@ -81,7 +91,7 @@ all:: $1$$(EXE)
 # Clean this executable as well as all associated objects when cleaning.
 clean::
 	rm -f -- $1$$(EXE)
-	rm -f -- $$($1_OBJECTS)
+	rm -f -- $$(strip $$(sort $$($1_OBJECTS)))
 
 # Show various definitions when asked.
 defs::
@@ -103,4 +113,7 @@ endef # _c_program_template
 define __build_module_C
 $(foreach prog,$(PROGRAMS),$(eval $(call _c_program_template,$(prog))))
 $(if $(LIBRARIES),$(error LIBRARIES are supported yet))
+# Suggest checkers depending on what source files were used.
+_configure_implicit_checkers += $(if $(foreach prog,$(PROGRAMS),$(_c_$(prog)_sources_c)),working-c-compiler)
+_configure_implicit_checkers += $(if $(foreach prog,$(PROGRAMS),$(_c_$(prog)_sources_c++)),working-c++-compiler)
 endef # __build_module_C

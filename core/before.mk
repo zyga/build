@@ -11,15 +11,25 @@ __build_known_vars += MAKEFILE_LIST MAKEFLAGS SHELL CURDIR
 # Phony targets that just correspond to generic actions
 .PHONY: all clean install defs
 
+# Phony targets that abbreviate common operations.
+.PHONY: c
+c: clean
+
+.PHONY: i
+i: install
+
 .PHONY: help
 help::
-	@echo "Build provides the following actions:"
-	@echo " build all       - build/compile/generate everything"
-	@echo " build clean     - remove all generated content"
-	@echo " build install   - install everything, building it if necessary"
-	@echo " build defs      - show all definitions"
-	@echo " build version   - show version of build itself"
+	@echo "Usage: build [options] [target]"
+	@echo
+	@echo " b[uild] [all]     - build/compile/generate everything (default)"
+	@echo " b[uild] c[lean]   - remove all generated content"
+	@echo " b[uild] i[nstall] - install everything, building it if necessary"
+	@echo " b[uild] defs      - show all definitions"
+	@echo " b[uild] version   - show version of build itself"
+	@echo
+	@echo " --out-of-tree DIR - build project rooted at DIR in here."
 
 .PHONY: version
 version::
-	@echo "Build version 0.1 alpha"
+	@echo "build version 0.1 beta"

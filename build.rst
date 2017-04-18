@@ -7,9 +7,9 @@ pure-make build system
 ----------------------
 
 :Author: me@zygoon.pl
-:Date:   2017-04-16
+:Date:   2017-04-18
 :Copyright: Zygmmunt Krynicki
-:Version: 0.1a
+:Version: 0.1b
 :Manual section: 1
 
 SYNOPSIS
@@ -27,29 +27,76 @@ programs.
 OPTIONS
 =======
 
-The `build` program takes the same options as `make` with the following
-exceptions. 
+`build` takes the following command line options:
 
-The `--file` and `--directory` options are used as internally and are
-unsupported. The `--jobs` (or `-j`) option is handled automatically. Several
-less common Make options are enabled by default. For details see the source
-code of the `build` script.
+`--help`:
+    Display available built-in help.
+`--version`:
+    Display version of `build`.
+`-n`:
+    Don't build anything, just print what you'd have done.
+`-q`:
+    Don't build anything but set the exit code to indicate if there is
+    something to do.
+`--out-of-tree DIR`:
+    Build a project out of source tree. Built files will be placed in the
+    current directory unless the `--in` option was used to change that
+    location. The specified directory must contain the `Buildfile`.
+`--in DIR`:
+    Put all results in the specified directory. The directory is created if
+    necessary. When used together with `--oot` the directory where `build` is
+    invoked is totally detached from where it will write results to and where
+    it loads source code from.
+
+`build` understands several default targets:
+
+`all` (default):
+    Build everything, configuring the source tree if necessary
+`clean` or `c`:
+    Clean all build results.
+`install` or `i`:
+    Install all installable files (requires the UNIX module).
+`defs`:
+    Show extended information about what is defined in `Buildfile`.
 
 ENVIRONMENT
 ===========
 
-Internally `build` relies on `BUILD_INCLUDE_DIR` and `MAKEFLAGS` and those
-variables are reserved.
+Internally `build` relies on `BUILD_INCLUDE_DIR`, `BUILD_PROJECT_ROOT` and
+`MAKEFLAGS` and those variables are reserved.
+
+In addition the `C` module understands a number of typical variables such as:
+`CC`, `CXX`, `CFLAGS`, `CXXFLAGS`, `CPPFLAGS`, `LDFLAGS`, `LDLIBS` or
+`CROSS_COMPILE`.
+
+In addition the `UNIX` module understands `DESTDIR` and `prefix` as well as
+several variables derived off prefix like `bindir`, `libdir` and others.
+
+The `pkg-config` module is implicitly influenced by multiple variables that
+affect pkg-config itself. Refer to pkg-config documentation for details. 
 
 FILES
 =====
 
 `build` reads `Buildfile` as found in the current or any parent directory.
 
-`/usr/share/build/include/`
+In addition the directory that contains the `Buildfile` can also contain:
 
+`.build/*.check`:
+    Location of additional, project specific checkers.
+`.configure`:
+    Directory with results of the configuration process (removed by `build
+    clean`). Each subdirectory inside is named after a specific checker and
+    contains build artefacts, log files and a fragment of `config.h`.
+`config.h`:
+    Automatically generated configuration file (removed by `build clean`)
+
+System wide directories include:
+
+`/usr/share/build/include/`:
     Location of build modules. You can install your custom build modules here.
-    See the build-in C module for inspiration.
+`/usr/share/build/checkers/`:
+    Location of autoconf-like checkers that are used by the _configure_ module.
 
 BUGS
 ====
