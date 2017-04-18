@@ -1,5 +1,5 @@
 name: build 
-version: '0.1a'
+version: '0.1b'
 summary: pure-make build system 
 description: |
  Build is a simple build system that is inspired by autotools but
@@ -17,6 +17,4 @@ parts:
   build:
     source: .
     plugin: dump
-    snap:
-        - include
-        - build
+    snap: [checkers, core, include, build]
