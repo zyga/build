@@ -1,3 +1,5 @@
+# vim: set filetype=make :
+
 # Build uses Buildfiles to hold build declarations and rules.
 #
 # A Buildfile is really a Makefile but has some implicit things defined.  For

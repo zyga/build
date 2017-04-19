@@ -1,3 +1,4 @@
+# vim: set filetype=make :
 $(foreach mod_var,$(filter __build_module_%,$(.VARIABLES)),$(eval $(value $(mod_var))))
 
 # Report possible typos.

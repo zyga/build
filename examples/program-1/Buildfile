@@ -1,3 +1,5 @@
+# vim: set filetype=make :
+
 # Build uses modules to organize features.
 #
 # The C module can be included for compiling C/C++ programs.

@@ -1,3 +1,5 @@
+# vim: set filetype=make :
+
 # The pkg-config module allows your programs to access all installed pkg-config
 # files. This module must be included after the C module and depends on the
 # externally-provided pkg-config executable (you need to install it with a

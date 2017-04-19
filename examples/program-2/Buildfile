@@ -1,3 +1,5 @@
+# vim: set filetype=make :
+
 # The UNIX module contains rules for installing programs on a typical UNIX
 # system. The same module also respects several variables, such as prefix,
 # bindir, or DESTDIR.

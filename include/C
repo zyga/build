@@ -1,3 +1,4 @@
+# vim: set filetype=make :
 ## Build module for C/C++ programs
 ##
 ## This module defines two top-level variables: PROGRAMS and LIBRARIES

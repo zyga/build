@@ -1,3 +1,5 @@
+# vim: set filetype=make :
+
 # Build looks very carefully at all the variables and makes sure there are no
 # hidden typos or unrecognized variables.
 include C

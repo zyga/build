@@ -1,3 +1,4 @@
+# vim: set filetype=make :
 # Default goal (overrides any user rules)
 .DEFAULT_GOAL = all
 # Disable old suffix rules (faster)

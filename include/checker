@@ -1,3 +1,4 @@
+# vim: set filetype=make :
 ## Build module for autoconf-style checkers.
 $(if $(findstring __build_module_C,$(.VARIABLES)),,$(error please import the C module first))
 
