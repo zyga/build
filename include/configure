@@ -1,4 +1,5 @@
 # vim: set filetype=make :
+
 ## Build module for build configuration system.
 $(if $(findstring __build_module_C,$(.VARIABLES)),,$(error please import the C module first))
 
@@ -8,21 +9,21 @@ _configure_implicit_checkers ?=
 __build_known_vars += CHECKERS
 __build_known_vars += _configure_known_checkers
 
-.PRECIOUS: .configure/%.check
-.configure/%.check:
+.PRECIOUS: .configure/%/
+.configure/%/:
 	@mkdir -p $@
 
-# Pattern rule for running checkers from build distribution.
-.configure/%.check/config.h.part: $(BUILD_DATA_DIR)/checkers/%.check | .configure/%.check
-	@+build --oot $^ --in .configure/$*.check describe
-	@+build --oot $^ --in .configure/$*.check check >.configure/$*.check/configure.log 2>&1 || :
-	@+build --oot $^ --in .configure/$*.check config.h.part
+# Pattern rules for running checkers from build distribution.
+.configure/%/checker.config.h: $(BUILD_INSTALLATION)/checkers/%.check/Buildfile | .configure/%/
+	@+build --quiet --srcdir $(dir $<) --outdir $| $(notdir $@)
+.configure/%/checker.success:  $(BUILD_INSTALLATION)/checkers/%.check/Buildfile | .configure/%/
+	@+$(if $(CHECKER_$*_OPTIONAL),-)build --quiet --srcdir $(dir $<) --outdir $| $(notdir $@)
 
-# Pattern rule for running checkers from project tree.
-.configure/%.check/config.h.part: $(BUILD_PROJECT_ROOT)/.build/%.check | .configure/%.check
-	@+build --oot $^ --in .configure/$*.check describe
-	@+build --oot $^ --in .configure/$*.check check >.configure/$*.check/configure.log 2>&1 || :
-	@+build --oot $^ --in .configure/$*.check config.h.part
+# Pattern rules for running checkers from project tree.
+.configure/%/checker.config.h: $(BUILD_SRCDIR)/.build/%.check/Buildfile | .configure/%/
+	@+build --quiet --srcdir $(dir $<) --outdir $| $(notdir $@)
+.configure/%/checker.success:  $(BUILD_SRCDIR)/.build/%.check/Buildfile | .configure/%/
+	@+$(if $(CHECKER_$*_OPTIONAL),-)build --quiet --srcdir $(dir $<) --outdir $| $(notdir $@)
 
 # Clean generated config.h file and entire .configure directory when cleaning.
 .PHONY: clean
@@ -34,8 +35,8 @@ clean::
 # Explicitly mark implicit checkers so that people get the idea.
 .PHONY: defs
 defs::
-	@echo "autoconf-style checkers used:"
-	@$(foreach checker,$(sort $(CHECKERS)),echo '  - $(checker) $(if $(findstring $(checker),$(_configure_implicit_checkers)),(implicit))';)
+	@echo "checkers used:"
+	@$(foreach checker,$(sort $(CHECKERS)),echo '  - $(checker) [$(strip $(if $(CHECKER_$(checker)_OPTIONAL),optional) $(if $(findstring $(checker),$(_configure_implicit_checkers)),implicit,explicit))]';)
 
 .PHONY: help-checkers
 help-checkers:
@@ -48,7 +49,7 @@ help-checkers:
 # has been read.
 define __build_module_configure
 
-_configure_known_checkers := $(sort $(wildcard $(BUILD_DATA_DIR)/checkers/*.check) $(wildcard $(BUILD_PROJECT_ROOT)/.build/*.check))
+_configure_known_checkers := $(sort $(wildcard $(BUILD_INSTALLATION)/checkers/*.check) $(wildcard $(BUILD_SRCDIR)/.build/*.check))
 
 # The C module suggests implicit checkers based on source files used.
 CHECKERS += $(sort $(_configure_implicit_checkers))
@@ -56,15 +57,32 @@ CHECKERS += $(sort $(_configure_implicit_checkers))
 # Validate that all CHECKERS are correct.
 $(foreach checker,$(CHECKERS),$(if $(findstring $(checker),$(_configure_known_checkers)),,$(error CHECKERS referenced unknown checker $(checker))))
 
+__build_known_vars += $(foreach checker,$(CHECKERS),CHECKER_$(checker)_OPTIONAL)
+
+# Checkers are not optional by default. 
+$(foreach checker,$(CHECKERS),$(eval CHECKER_$(checker)_OPTIONAL ?=))
+
 # Make each object file depend on config.h
 $(foreach prog,$(PROGRAMS),$($(prog)_OBJECTS)): config.h
 
 # Make each object file know that it can include config.h
-$(foreach prog,$(PROGRAMS),$(eval $(prog)_CPPFLAGS += -DHAVE_CONFIG_H))
+$(foreach prog,$(PROGRAMS),$(eval $($(prog)_OBJECTS): CPPFLAGS += -DHAVE_CONFIG_H))
 
 # Generate C header file with configuration data.
-config.h: $(sort $(foreach checker,$(CHECKERS),.configure/$(checker).check/config.h.part))
-	@echo "aggregating build configuration data"
-	@$(if $^,cat $^ >,truncate --size 0) $@
+ifneq ($(CHECKERS),)
+
+# Construct the config.h file out of partial config.h files from each checker.
+# Require each non-optional checker to succeed.
+# FIXME: the .success files are ignored by make 
+config.h: $(foreach checker,$(CHECKERS),.configure/$(checker)/checker.config.h)
+	cat $^ >$@
+else
+	truncate --size 0 $@
+endif
+
+# Add a configure target because people feel good about it.
+# It tries to get the successful status of each checker (note that the
+# appropriate target handles optionality already.
+configure:: $(sort $(foreach checker,$(CHECKERS),.configure/$(checker)/checker.success))
 
 endef # __build_module_configure

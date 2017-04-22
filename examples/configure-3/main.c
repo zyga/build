@@ -8,12 +8,14 @@
 
 int main()
 {
-    printf("Hello World (you have math.h)\n");
+    printf("Hello World\n");
 #ifdef HAVE_CONFIG_H
 	printf("You have \"config.h\"\n");
 #endif
 #ifdef HAVE_MATH_H
 	printf("You have <math.h>\n");
+#else
+	printf("You don't have <math.h>\n");
 #endif
 #ifdef HAVE_FOOBAR_H
 	printf("You have <foobar.h>\n");

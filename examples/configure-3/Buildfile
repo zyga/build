@@ -4,8 +4,17 @@ include C
 include configure
 
 # You can define your own checker "foo" by creating a project called foo.check
-# and placing it in the .build/ directory next to your Buildfile.
+# and placing it in the .build/ directory next to your Buildfile. The project
+# should use a "checker" module and contain a test.c or test.cpp file. You must
+# define DESCRIPTION and you may also define C_MACRO (which will become
+# available in the config.h file.
+#
+# The checkers you wish to use musts be listed in CHECKERS. 
 CHECKERS = have-math-h have-foobar-h 
+# Checkers that are optional (they can fail without halting the build) can be
+# marked as such by defining CHECKER_name_OPTIONAL = yes.
+CHECKER_have-foobar-h_OPTIONAL = yes
+# Checkers are listed by "build defs", have a look.
 
 PROGRAMS = hello-world
 hello-world_SOURCES = main.c

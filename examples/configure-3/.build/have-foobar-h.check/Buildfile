@@ -3,5 +3,5 @@
 include C
 include checker
 
-DESCRIPTION = checking for C header file: foobar.h
-C_MACRO = HAVE_FOOBAR_H
+CHECKER_DESCRIPTION = checking if "include <foobar.h>" works
+CHECKER_C_MACRO = HAVE_FOOBAR_H

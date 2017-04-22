@@ -1,6 +1,12 @@
 # Examples
-*.o
 *.exe
+*.o
+.configure/
+checker.config.h
+checker.exit
+checker.log
+checker.success
+config.h
 hello-world
 test
 
@@ -16,3 +22,7 @@ debian/files
 parts/
 prime/
 stage/
+
+# Editors
+*~
+.*.swp

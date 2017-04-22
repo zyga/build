@@ -1,43 +1,45 @@
 #!/bin/sh
 set -u
 
-# Locate build itself. This will export the variable BUILD_DATA_DIR.
-if [ -z "${BUILD_DATA_DIR:-}" ]; then
+# Locate build itself. This will export the variable BUILD_INSTALLATION.
+if [ -z "${BUILD_INSTALLATION:-}" ]; then
 	_build_uninstalled_source_dir="$(dirname -- "$(realpath -- "$0")")"
 	if [ -e "$_build_uninstalled_source_dir/.git" ]; then
-		BUILD_DATA_DIR="$_build_uninstalled_source_dir"
+		BUILD_INSTALLATION="$_build_uninstalled_source_dir"
 	elif [ -n "${SNAP:-}" ]; then
-		BUILD_DATA_DIR="$SNAP"
+		BUILD_INSTALLATION="$SNAP"
 	else
-		BUILD_DATA_DIR="/usr/share/build"
+		BUILD_INSTALLATION="/usr/share/build"
 	fi
-	export BUILD_DATA_DIR
+	export BUILD_INSTALLATION
 fi
 
 _build_out_of_tree=0
 _build_question_mode=0
+_build_verbose_level=0
 _build_dry_run_mode=0
-_build_project_root=.
+_build_srcdir="${BUILD_SRCDIR:-.}"
+_build_outdir="${BUILD_OUTDIR:-.}"
 
 # Parse command line arguments.
 while [ -n "${1:-}" ]; do
 	case "$1" in
 		--help|help)
-			MAKEFILES="$BUILD_DATA_DIR/core/before.mk" \
+			MAKEFILES="$BUILD_INSTALLATION/core/before.mk" \
 				exec make \
 					--no-builtin-rules \
 					--no-builtin-variables \
 					--warn-undefined-variables \
-					--file "$BUILD_DATA_DIR/core/empty.mk" \
+					--file "$BUILD_INSTALLATION/core/empty.mk" \
 					-- help;
 			;;
 		--version|version)
-			MAKEFILES="$BUILD_DATA_DIR/core/before.mk" \
+			MAKEFILES="$BUILD_INSTALLATION/core/before.mk" \
 				exec make \
 					--no-builtin-rules \
 					--no-builtin-variables \
 					--warn-undefined-variables \
-					--file "$BUILD_DATA_DIR/core/empty.mk" \
+					--file "$BUILD_INSTALLATION/core/empty.mk" \
 					-- version;
 			;;
 		-q|--question)
@@ -48,34 +50,50 @@ while [ -n "${1:-}" ]; do
 			_build_dry_run_mode=1
 			shift
 			;;
-		--out-of-tree|--oot)
+		-v|--verbose)
+			_build_verbose_level=1
+			shift
+			;;
+		-s|--silent|--quiet)
+			_build_verbose_level=-1
+			shift
+			;;
+		--srcdir|--out-of-tree|--oot)
 			if [ -z "${2:-}" ]; then
-				echo "build: option $1 requires an argument"
+				echo "build: option $1 requires an argument" >&2
 				exit 1
 			fi
 			_build_out_of_tree=1
-			_build_project_root="$(realpath "$2")"
+			_build_srcdir="$(realpath -- "$2")"
+			if [ "$_build_verbose_level" -gt 0 ]; then
+				echo "build: set source directory to $_build_srcdir"
+			fi
 			shift 2
 			;;
-		--in)
+		--outdir|--in)
 			if [ -z "${2:-}" ]; then
-				echo "build: option $1 requires an argument"
+				echo "build: option $1 requires an argument" >&2
 				exit 1
 			fi
 			if [ "$_build_out_of_tree" -eq 0 ]; then
 				_build_out_of_tree=1
-				_build_project_root="$(realpath .)"
+				_build_srcdir="$(realpath .)"
+				if [ "$_build_verbose_level" -gt 0 ]; then
+					echo "build: set source directory to $_build_srcdir"
+				fi
 			fi
-			# echo "build: performing out-of-tree build of $(realpath --relative-to . "$_build_project_root") in $(realpath --relative-to . "$2")"
-			mkdir -p "$2"
-			cd "$2"
+			_build_outdir="$(realpath -- "$2")"
+			mkdir -p -- "$_build_outdir"
+			if [ "$_build_verbose_level" -gt 0 ]; then
+				echo "build: set output directory to $_build_outdir"
+			fi
 			shift 2
 			;;
 		-*)
-			echo "build: unknown option: $1"
+			echo "build: unknown option: $1" >&2
 			exit 1
 			;;
-		[^-]*)
+		[!-]*)
 			# Treat everything else as make arguments.
 			break
 			;;
@@ -84,40 +102,49 @@ done
 
 if [ "$_build_out_of_tree" -eq 0 ]; then
 	# Find Buildfile in the current directory or above.
-	while [ ! -f "$_build_project_root/Buildfile" ] && [ "$(realpath -- "$_build_project_root")" != / ]; do
-		_build_project_root="$_build_project_root/..";
+	while [ ! -f "$_build_srcdir/Buildfile" ] && [ "$(realpath -- "$_build_srcdir")" != / ]; do
+		_build_srcdir="$_build_srcdir/..";
 	done
-	_build_project_root="$(realpath "$_build_project_root")"
+	_build_srcdir="$(realpath -- "$_build_srcdir")"
 else
-	# Set VPATH to the real project root so that make can find the sources.
-	export VPATH="$_build_project_root"
+	if [ "$_build_verbose_level" -gt 0 ]; then
+		echo "build: set VPATH to $_build_srcdir"
+	fi
+	# Set VPATH to the location of the source code so that make can find it.
+	VPATH="$_build_srcdir"
+	export VPATH
 fi
 
 # Ensure that project root directory contains the buildfile.
-if [ ! -f "$_build_project_root/Buildfile" ]; then
-	echo "build: cannot find Buildfile in $(realpath "$_build_project_root")"
+if [ ! -f "$_build_srcdir/Buildfile" ]; then
+	if [ "$_build_out_of_tree" -eq 1 ]; then
+		echo "build: cannot find Buildfile in $(realpath -- "$_build_srcdir")" >&2
+	else
+		echo "build: cannot find Buildfile" >&2
+	fi
 	exit 1
 fi
 
-# If we are not building out of tree go to the project root directory.
-if [ "$_build_out_of_tree" -eq 0 ]; then
-	if [ "$(realpath "$_build_project_root")" != "$(realpath .)" ]; then
-		echo "build: changing directory to $(realpath --relative-to . "$_build_project_root")"
-		cd "$_build_project_root"
-	fi
-fi
+
+cd -- "$_build_outdir" || exit
+
+# Check if the output is going to a terminal and relay this to the ANSI module.
+if [ -t 1 ]; then _build_isatty=yes; else _build_isatty=no; fi
 
 # Run GNU make with all the right options.
-BUILD_PROJECT_ROOT="$_build_project_root" MAKEFILES="$BUILD_DATA_DIR/core/before.mk $_build_project_root/Buildfile $BUILD_DATA_DIR/core/after.mk " \
+_ANSI_isatty=$_build_isatty \
+BUILD_SRCDIR="$_build_srcdir" \
+BUILD_OUTDIR="$_build_outdir" \
+MAKEFILES="$BUILD_INSTALLATION/core/before.mk $_build_srcdir/Buildfile $BUILD_INSTALLATION/core/after.mk " \
 	exec make \
-	$(test -z "${MAKEFLAGS:-}" && echo --jobs "$(nproc)" || echo "--jobs") \
+	$(test -z "${MAKEFLAGS:-}" && echo --jobs "$(nproc)") \
 	$(test "$_build_question_mode" -eq 1 && echo --question) \
+	$(test "$_build_verbose_level" -lt 0 && echo --quiet) \
 	$(test "$_build_dry_run_mode" -eq 1 && echo --dry-run) \
 	--no-builtin-rules \
 	--no-builtin-variables \
 	--warn-undefined-variables \
-	--no-print-directory \
 	--output-sync=target \
-	--include-dir="$BUILD_DATA_DIR/include" \
-	--file $BUILD_DATA_DIR/core/empty.mk \
+	--include-dir="$BUILD_INSTALLATION/include" \
+	--file $BUILD_INSTALLATION/core/empty.mk \
 	-- "$@"

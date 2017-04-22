@@ -10,38 +10,27 @@ PROGRAMS ?=
 # List of static/shared libraries to build.
 LIBRARIES ?=
 
-# CROSS_COMPILE - simple cross-compiler support.
-# Can be set to the arch triplet of the C/C++ cross-compiler.
-CROSS_COMPILE ?=
-export CROSS_COMPILE
-# EXE - suffix of compiled executables.
-# It automatically defaults to .exe if cross-compiling for Windows.
-EXE = $(if $(or $(findstring x86_64-w64-mingw32,$(CROSS_COMPILE)),$(findstring i686-w64-mingw32,$(CROSS_COMPILE))),.exe)
-
 # Typical variables influencing C/C++ builds.
-
-# CC - name of the C compiler.
+#
+# CROSS_COMPILE - Cross compiler to use.
+# EXE           - Suffix of compiled executables.
+# CC            - Name of the C compiler.
+# CXX           - Name of the C++ compiler.
+# CPPFLAGS      - Flags for the preprocessor.
+# CFLAGS        - Flags for the C compiler.
+# CXXFLAGS      - Flags for the C++ compiler.
+# LDFLAGS       - Flags for the linker.
+# LDLIBS        - List of libraries to link with.
+#
+CROSS_COMPILE ?=
+EXE = $(if $(or $(findstring x86_64-w64-mingw32,$(CROSS_COMPILE)),$(findstring i686-w64-mingw32,$(CROSS_COMPILE))),.exe)
 CC ?= $(if $(CROSS_COMPILE),$(CROSS_COMPILE)-gcc,cc)
-export CC
-# CC - name of the C++ compiler.
 CXX ?= $(if $(CROSS_COMPILE),$(CROSS_COMPILE)-g++,c++)
-export CXX
-
-# CPPFLAGS - flags for the preprocessor.
 CPPFLAGS ?=
-export CPPFLAGS
-# CFLAGS - flags for the C compiler.
 CFLAGS ?= -Wall
-export CFLAGS
-# CXXFLAGS - flags for the C++ compiler.
 CXXFLAGS ?=
-export CXXFLAGS
-# LDFLAGS - flags for the linker.
 LDFLAGS ?=
-export LDFLAGS
-# LDLIBS - list of libraries to link with.
 LDLIBS ?=
-export LDLIBS
 
 # List of variables supported by the C/C++ target.
 # This is used to search for typos and mistakes.
@@ -65,17 +54,17 @@ _c_$1_sources_c++ = $$(filter %.cpp,$$($1_SOURCES))
 _c_$1_sources_wat = $$(filter-out %.c %.cpp,$$($1_SOURCES))
 _c_$1_objects_c = $$(patsubst %.c,$1_%.o,$$(notdir $$(_c_$1_sources_c)))
 _c_$1_objects_c++ ?= $$(patsubst %.cpp,$1_%.o,$$(notdir $$(_c_$1_sources_c++)))
-$1_OBJECTS += $$(_c_$1_objects_c) $$(_c_$1_objects_c++)
+$1_OBJECTS += $$(strip $$(_c_$1_objects_c) $$(_c_$1_objects_c++))
 $$(if $$(_c_$1_sources_wat),$$(error $1_SOURCES contains $$(_c_$1_sources_wat) but only *.c/*.cpp files are supported))
 
 $1_COMPILER ?= $$(if $$(_c_$1_sources_c++),$$(CXX),$$(CC))
 
 # Per-program set of C/C++ compiler flags.
-$1_CPPFLAGS += $(CPPFLAGS)
-$1_CFLAGS += $(CFLAGS)
-$1_CXXFLAGS += $(CXXFLAGS)
-$1_LDFLAGS += $(LDFLAGS)
-$1_LDLIBS += $(LDLIBS)
+$1_CPPFLAGS += $$(CPPFLAGS)
+$1_CFLAGS += $$(CFLAGS)
+$1_CXXFLAGS += $$(CXXFLAGS)
+$1_LDFLAGS += $$(LDFLAGS)
+$1_LDLIBS += $$(LDLIBS)
 
 $$(_c_$1_objects_c): $1_%.o: %.c
 	$$(strip $$(CC) -c $$($1_CPPFLAGS) $$($1_CFLAGS) $$< -o $$@)

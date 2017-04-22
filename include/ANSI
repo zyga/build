@@ -1,0 +1,25 @@
+# vim: set filetype=make :
+#
+# Build module for ANSI escape sequences and terminal handling.
+
+__build_known_vars += _ANSI_ESC _ANSI_isatty $(addprefix ANSI_SGR_,normal reset bold red green)
+
+# NOTE: _ANSI_isatty is passed by `build` script as we cannot use $(shell) to
+# query for it from make.
+ifeq ($(_ANSI_isatty),yes)
+_ANSI_ESC:=$(shell printf "\033")
+ANSI_SGR_bold=$(_ANSI_ESC)[1m
+ANSI_SGR_normal=$(_ANSI_ESC)[0m
+ANSI_SGR_reset=$(_ANSI_ESC)[0m
+ANSI_SGR_red=$(_ANSI_ESC)[31m
+ANSI_SGR_green=$(_ANSI_ESC)[32m
+else
+ANSI_SGR_bold=
+ANSI_SGR_normal=
+ANSI_SGR_reset=
+ANSI_SGR_red=
+ANSI_SGR_green=
+endif
+
+define __build_module_ANSI
+endef # __build_module_ANSI

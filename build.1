@@ -52,23 +52,30 @@ Display available built\-in help.
 .B \fI\-\-version\fP:
 Display version of \fIbuild\fP\&.
 .TP
-.B \fI\-n\fP:
-Don\(aqt build anything, just print what you\(aqd have done.
+.B \fI\-n\fP \fI\-\-just\-print\fP \fI\-\-dry\-run\fP \fI\-\-recon\fP:
+Don\(aqt build anything, just print the commands that would have been
+executed.
 .TP
 .B \fI\-q\fP:
 Don\(aqt build anything but set the exit code to indicate if there is
 something to do.
 .TP
-.B \fI\-\-out\-of\-tree DIR\fP:
+.B \fI\-v\fP \fI\-\-verbose\fP:
+Be more talkative while building.
+.TP
+.B \fI\-s\fP \fI\-\-silent\fP \fI\-\-quiet\fP:
+Be less talkative while building.
+.TP
+.B \fI\-\-srcdir DIR\fP \fI\-\-out\-of\-tree DIR\fP \fI\-\-oot DIR\fP:
 Build a project out of source tree. Built files will be placed in the
-current directory unless the \fI\-\-in\fP option was used to change that
+current directory unless the \fI\-\-outdir\fP option was used to change that
 location. The specified directory must contain the \fIBuildfile\fP\&.
 .TP
-.B \fI\-\-in DIR\fP:
+.B \fI\-\-outdir DIR\fP \fI\-\-in DIR\fP:
 Put all results in the specified directory. The directory is created if
-necessary. When used together with \fI\-\-oot\fP the directory where \fIbuild\fP is
-invoked is totally detached from where it will write results to and where
-it loads source code from.
+necessary. When used together with \fI\-\-srcdir\fP the directory where \fIbuild\fP
+is invoked is totally detached from where it will write results to and
+where it loads source code from.
 .UNINDENT
 .sp
 \fIbuild\fP understands several default targets:
@@ -88,8 +95,8 @@ Show extended information about what is defined in \fIBuildfile\fP\&.
 .UNINDENT
 .SH ENVIRONMENT
 .sp
-Internally \fIbuild\fP relies on \fIBUILD_INCLUDE_DIR\fP, \fIBUILD_PROJECT_ROOT\fP and
-\fIMAKEFLAGS\fP and those variables are reserved.
+Internally \fIbuild\fP relies on \fIBUILD_INSTALLATION\fP, \fIBUILD_SRCDIR\fP,
+\fIBUILD_OUTDIR\fP, \fIVPATH\fP and \fIMAKEFLAGS\fP\&. Those variables are reserved.
 .sp
 In addition the \fIC\fP module understands a number of typical variables such as:
 \fICC\fP, \fICXX\fP, \fICFLAGS\fP, \fICXXFLAGS\fP, \fICPPFLAGS\fP, \fILDFLAGS\fP, \fILDLIBS\fP or
@@ -102,7 +109,8 @@ The \fIpkg\-config\fP module is implicitly influenced by multiple variables that
 affect pkg\-config itself. Refer to pkg\-config documentation for details.
 .SH FILES
 .sp
-\fIbuild\fP reads \fIBuildfile\fP as found in the current or any parent directory.
+\fIbuild\fP reads \fIBuildfile\fP as found in the current or any parent directory
+(unless \fI\-\-srcdir\fP was provided then no lookup is performed).
 .sp
 In addition the directory that contains the \fIBuildfile\fP can also contain:
 .INDENT 0.0
@@ -123,10 +131,18 @@ System wide directories include:
 .INDENT 0.0
 .TP
 .B \fI/usr/share/build/include/\fP:
-Location of build modules. You can install your custom build modules here.
+Location of modules that can be included in Buildfiles.
+Additional packages may install new modules here.
 .TP
 .B \fI/usr/share/build/checkers/\fP:
-Location of autoconf\-like checkers that are used by the _configure_ module.
+Location of checkers that are used by the configure module.
+Additional packages may install new checkers projects here.
+.TP
+.B \fI/usr/share/build/core/\fP:
+Internal files that make Build itself operate.
+.TP
+.B \fI/usr/share/build/examples/\fP:
+Various example projects illustrating particular features of Build.
 .UNINDENT
 .SH BUGS
 .sp

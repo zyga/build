@@ -33,20 +33,26 @@ OPTIONS
     Display available built-in help.
 `--version`:
     Display version of `build`.
-`-n`:
-    Don't build anything, just print what you'd have done.
+
+`-n` `--just-print` `--dry-run` `--recon`:
+    Don't build anything, just print the commands that would have been
+    executed.
 `-q`:
     Don't build anything but set the exit code to indicate if there is
     something to do.
-`--out-of-tree DIR`:
+`-v` `--verbose`:
+    Be more talkative while building.
+`-s` `--silent` `--quiet`:
+    Be less talkative while building.
+`--srcdir DIR` `--out-of-tree DIR` `--oot DIR`:
     Build a project out of source tree. Built files will be placed in the
-    current directory unless the `--in` option was used to change that
+    current directory unless the `--outdir` option was used to change that
     location. The specified directory must contain the `Buildfile`.
-`--in DIR`:
+`--outdir DIR` `--in DIR`:
     Put all results in the specified directory. The directory is created if
-    necessary. When used together with `--oot` the directory where `build` is
-    invoked is totally detached from where it will write results to and where
-    it loads source code from.
+    necessary. When used together with `--srcdir` the directory where `build`
+    is invoked is totally detached from where it will write results to and
+    where it loads source code from.
 
 `build` understands several default targets:
 
@@ -62,8 +68,8 @@ OPTIONS
 ENVIRONMENT
 ===========
 
-Internally `build` relies on `BUILD_INCLUDE_DIR`, `BUILD_PROJECT_ROOT` and
-`MAKEFLAGS` and those variables are reserved.
+Internally `build` relies on `BUILD_INSTALLATION`, `BUILD_SRCDIR`,
+`BUILD_OUTDIR`, `VPATH` and `MAKEFLAGS`. Those variables are reserved.
 
 In addition the `C` module understands a number of typical variables such as:
 `CC`, `CXX`, `CFLAGS`, `CXXFLAGS`, `CPPFLAGS`, `LDFLAGS`, `LDLIBS` or
@@ -78,7 +84,8 @@ affect pkg-config itself. Refer to pkg-config documentation for details.
 FILES
 =====
 
-`build` reads `Buildfile` as found in the current or any parent directory.
+`build` reads `Buildfile` as found in the current or any parent directory
+(unless `--srcdir` was provided then no lookup is performed).
 
 In addition the directory that contains the `Buildfile` can also contain:
 
@@ -94,9 +101,15 @@ In addition the directory that contains the `Buildfile` can also contain:
 System wide directories include:
 
 `/usr/share/build/include/`:
-    Location of build modules. You can install your custom build modules here.
+    Location of modules that can be included in Buildfiles.
+    Additional packages may install new modules here. 
 `/usr/share/build/checkers/`:
-    Location of autoconf-like checkers that are used by the _configure_ module.
+    Location of checkers that are used by the configure module.
+    Additional packages may install new checkers projects here.
+`/usr/share/build/core/`:
+    Internal files that make Build itself operate.
+`/usr/share/build/examples/`:
+    Various example projects illustrating particular features of Build.
 
 BUGS
 ====

@@ -3,4 +3,4 @@
 include C
 include checker
 
-DESCRIPTION = checking if the C compiler ($(CC)) can produce executables
+CHECKER_DESCRIPTION = checking if the C $(if $(CROSS_COMPILE),cross-compiler,compiler) ($(CC)) can produce executables

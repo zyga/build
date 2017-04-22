@@ -9,8 +9,9 @@ __build_possible_typos ?=
 __build_known_vars += .PHONY .DEFAULT_GOAL .SUFFIXES
 __build_known_vars += __build_possible_typos __build_known_vars __build_unknown_vars __build_module_%
 __build_known_vars += MAKEFILE_LIST MAKEFLAGS SHELL CURDIR
+
 # Phony targets that just correspond to generic actions
-.PHONY: all clean install defs
+.PHONY: all check clean install defs
 
 # Phony targets that abbreviate common operations.
 .PHONY: c
@@ -27,10 +28,12 @@ help::
 	@echo " b[uild] c[lean]   - remove all generated content"
 	@echo " b[uild] i[nstall] - install everything, building it if necessary"
 	@echo " b[uild] defs      - show all definitions"
+	@echo " b[uild] check     - run tests if any are defined"
 	@echo " b[uild] version   - show version of build itself"
 	@echo
-	@echo " --out-of-tree DIR - build project rooted at DIR in here."
+	@echo " --srcdir DIR      - get source code from DIR"
+	@echo " --outdir DIR      - put build artefacts to DIR"
 
 .PHONY: version
 version::
-	@echo "build version 0.1 beta"
+	@echo "build version 0.1 gamma"

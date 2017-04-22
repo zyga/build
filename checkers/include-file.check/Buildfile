@@ -1,0 +1,18 @@
+# vim: set filetype=make :
+
+include C
+include checker
+
+CHECKER_ARG_header ?= $(warning CHECKER_ARG_header must be set to the name of the C header to include)
+CHECKER_ARG_macro ?= $(warning CHECKER_ARG_macro must be set to the HAVE_xxx style macro to control)
+
+CHECKER_DESCRIPTION = checking for C header file $(CHECKER_ARG_header) 
+CHECKER_C_MACRO = $(CHECKER_ARG_macro)
+
+test_SOURCES = test.c
+
+test.c: test.c.in
+	sed -e 's/@HEADER@/$(CHECKER_ARG_header)/' <$< >$@
+
+clean::
+	rm -f test.c

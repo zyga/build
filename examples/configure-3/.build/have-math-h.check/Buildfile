@@ -3,5 +3,5 @@
 include C
 include checker
 
-DESCRIPTION = checking for C header file: math.h
-C_MACRO = HAVE_MATH_H
+CHECKER_DESCRIPTION = checking if "include <math.h>" works
+CHECKER_C_MACRO = HAVE_MATH_H
