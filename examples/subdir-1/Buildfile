@@ -1,0 +1,10 @@
+# vim: set filetype=make :
+
+include C
+
+PROGRAMS = hello-world
+# You can use subdirectories freely. Object files will be placed in
+# subdirectories as you'd expect. This also works in out-of-tree builds.
+#
+# The only thing you need to be aware of is $(wildcard)
+hello-world_SOURCES = src/hello.c

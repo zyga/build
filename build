@@ -106,6 +106,7 @@ if [ "$_build_out_of_tree" -eq 0 ]; then
 		_build_srcdir="$_build_srcdir/..";
 	done
 	_build_srcdir="$(realpath -- "$_build_srcdir")"
+	_build_outdir="$_build_srcdir"
 else
 	if [ "$_build_verbose_level" -gt 0 ]; then
 		echo "build: set VPATH to $_build_srcdir"
@@ -124,7 +125,6 @@ if [ ! -f "$_build_srcdir/Buildfile" ]; then
 	fi
 	exit 1
 fi
-
 
 cd -- "$_build_outdir" || exit
 
