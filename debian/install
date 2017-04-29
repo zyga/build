@@ -2,3 +2,4 @@ build usr/bin
 checkers usr/share/build/
 core usr/share/build/
 include usr/share/build/
+tests usr/share/build/

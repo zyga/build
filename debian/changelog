@@ -1,3 +1,12 @@
+build (0.1g) xenial; urgency=medium
+
+  * Lots of bugfixes
+  * Regression: configure module
+  * Feature: automatic build dependencies
+  * Feature: initial test suite
+
+ -- Zygmunt Krynicki <zygmunt.krynicki@canonical.com>  Sun, 30 Apr 2017 01:33:01 +0200
+
 build (0.1b) xenial; urgency=medium
 
   * Add support for out-of-tree builds.
