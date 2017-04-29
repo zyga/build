@@ -1,0 +1,5 @@
+# vim: set filetype=make :
+include C
+
+PROGRAMS = test 
+test_SOURCES = main.c

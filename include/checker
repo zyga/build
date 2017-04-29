@@ -5,7 +5,7 @@ $(if $(findstring __build_module_ANSI,$(.VARIABLES)),,$(eval include ANSI))
 __build_known_vars += CHECKER_DESCRIPTION CHECKER_C_MACRO CHECKER_ARG_%
 
 # Generate a fragment of a C header file, a success-flag file and a file with the exit code.
-all:: checker.exit checker.config.h checker.success
+all:: $(addprefix $(BUILD_OUTDIR)/,checker.exit checker.config.h checker.success)
 
 # Checker module assumes that the importer will define a check target. We use
 # that check target to perform the test.
@@ -22,22 +22,22 @@ ifneq ($(findstring __build_module_C,$(.VARIABLES)),)
 PROGRAMS = test
 
 # The program can be either C or C++.
-test_SOURCES ?= $(strip $(wildcard $(BUILD_SRCDIR)/*.c $(BUILD_SRCDIR)/*.cpp))
+test_SOURCES ?= $(strip $(subst $(BUILD_SRCDIR)/,,$(wildcard $(BUILD_SRCDIR)/*.c $(BUILD_SRCDIR)/*.cpp)))
 
 # For the program must build for the check to pass.
 .PHONY: check
-check:: test$(EXE)
+check:: $(BUILD_OUTDIR)/test$(EXE)
 
 # Inject dependency on all the source files.
-checker.exit: $(test_SOURCES)
+$(BUILD_OUTDIR)/checker.exit: $(test_SOURCES)
 
 endif
 
 # XXX: there's no nice way to say that this also creates checker.log
 # without having make run the command twice :/
 .ONESHELL: checker.exit
-checker.exit: Buildfile
-	@+build check &>checker.log; echo $$?> $@
+$(BUILD_OUTDIR)/checker.exit: Buildfile | $(BUILD_OUTDIR)/
+	@+build check &>$(BUILD_OUTDIR)/checker.log; echo $$?> $@
 
 # Build module definition.
 #
@@ -54,8 +54,8 @@ CHECKER_C_MACRO ?=
 # Validate CHECKER_DESCRIPTION variable.
 CHECKER_DESCRIPTION ?= $(error define CHECKER_DESCRIPTION for checker)
 
-.ONESHELL: checker.success
-checker.success: checker.exit
+.ONESHELL: $(BUILD_OUTDIR)/checker.success
+$(BUILD_OUTDIR)/checker.success: checker.exit | $(BUILD_OUTDIR)/
 	@echo -n '$(ANSI_SGR_bold) * $(CHECKER_DESCRIPTION)... $(ANSI_SGR_normal)'
 	if [ "`cat $<`" -eq 0 ]; then
 		echo '$(ANSI_SGR_bold)$(ANSI_SGR_green)yes$(ANSI_SGR_normal)'
@@ -67,8 +67,8 @@ checker.success: checker.exit
 		exit `cat $<`
 	fi
 
-.ONESHELL: checker.config.h
-checker.config.h: checker.exit
+.ONESHELL: $(BUILD_OUTDIR)/checker.config.h
+$(BUILD_OUTDIR)/checker.config.h: $(BUILD_OUTDIR)/checker.exit | $(BUILD_OUTDIR)/
 ifeq ($(CHECKER_C_MACRO),)
 	@truncate --size 0 $@
 else

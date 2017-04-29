@@ -1,0 +1,8 @@
+#!/usr/bin/make -sRrf
+# vim: set filetype=make :
+
+subdirs = basic-c basic-cpp subdir-c
+
+.PHONY: check
+check:
+	$(foreach subdir,$(subdirs),$(MAKE) -C $(subdir) -f Testfile $@ || exit;)

@@ -35,7 +35,7 @@ LDLIBS ?=
 # List of variables supported by the C/C++ target.
 # This is used to search for typos and mistakes.
 _c_target_vars += SOURCES OBJECTS COMPILER CFLAGS CXXFLAGS CPPFLAGS LDFLAGS LDLIBS
-_c_target_private_vars += sources_c sources_c++ sources_wat objects_c objects_c++ reserved
+_c_target_private_vars += bare_sources_c bare_sources_c++ bare_sources_wat objects_c objects_c++ objects reserved
 
 # Notify about possible typos in variables related to PROGRAMS.
 __build_possible_typos += $(filter-out $(addsuffix _%,$(PROGRAMS)),$(filter $(addprefix %_,$(_c_target_vars)),$(.VARIABLES)))
@@ -43,37 +43,49 @@ __build_possible_typos += $(filter-out $(addsuffix _%,$(PROGRAMS)),$(filter $(ad
 __build_known_vars += CC CFLAGS CPPFLAGS CROSS_COMPILE CXX CXXFLAGS DESTDIR EXE LDFLAGS LDLIBS LIBRARIES PROGRAMS
 __build_known_vars += $(addprefix %_,$(_c_target_vars))
 __build_known_vars += $(addprefix _c_%_,$(_c_target_private_vars))
-__build_known_vars += _c_program_template _c_object_template _c++_object_template _c_target_vars _c_target_private_vars
+__build_known_vars += _c_program_template _c_object_template _c++_object_template _c_exec_template _c_target_vars _c_target_private_vars
+__build_known_vars += _c_programs _c_sources _c_objects _c_depfiles _c_dirs
 __build_known_vars += _configure_implicit_checkers
 
 # Compiling C files
 # $1 - program
 # $2 - C source file
 define _c_object_template
-$$(dir $2)$1_$$(notdir ${2:.c=.o}): $2 | $$(BUILD_OUTDIR)/$$(dir $2)
-	$$(strip $$(CC) -c $$(CPPFLAGS) $$(CFLAGS) $$< -o $$@)
+$$(dir $$(BUILD_OUTDIR)/$2)$1_$$(notdir ${2:.c=.o}): $$(BUILD_SRCDIR)/$2 | $$(dir $$(BUILD_OUTDIR)/$2)
+	$$(strip $$(CC) -c -MMD $$(CPPFLAGS) $$(CFLAGS) $$< -o $$@)
 endef
 
 # Compiling C++ files
 # $1 - program
 # $2 - C++ source file
 define _c++_object_template
-$$(dir $2)$1_$$(notdir ${2:.cpp=.o}): $2 | $$(BUILD_OUTDIR)/$$(dir $2)
-	$$(strip $$(CXX) -c $$(CPPFLAGS) $$(CFLAGS) $$(CXXFLAGS) $$< -o $$@)
+$$(dir $$(BUILD_OUTDIR)/$2)$1_$$(notdir ${2:.cpp=.o}): $$(BUILD_SRCDIR)/$2 | $$(dir $$(BUILD_OUTDIR)/$2)
+	$$(strip $$(CXX) -c -MMD $$(CPPFLAGS) $$(CFLAGS) $$(CXXFLAGS) $$< -o $$@)
+endef
+
+# Linking programs (C or C++)
+# $1 - program
+define _c_exec_template
+$$(BUILD_OUTDIR)/$1$$(EXE): $$(_c_$1_objects) | $$(BUILD_OUTDIR)/
+	$$(strip $$($1_COMPILER) $$(LDFLAGS) $$^ $$(LDLIBS) -o $$@)
 endef
 
 # Compiling and linking C/C++ programs
 define _c_program_template
-$1_SOURCES ?= $$(error set $1_SOURCES to list of source files)
-_c_$1_sources_c   = $$(filter %.c,$$($1_SOURCES))
-_c_$1_sources_c++ = $$(filter %.cpp,$$($1_SOURCES))
-_c_$1_sources_wat = $$(filter-out %.c %.cpp,$$($1_SOURCES))
-_c_$1_objects_c   = $$(foreach obj,$$(_c_$1_sources_c:.c=.o),$$(dir $$(obj))$1_$$(notdir $$(obj)))
-_c_$1_objects_c++ = $$(foreach obj,$$(_c_$1_sources_c++:.cpp=.o),$$(dir $$(obj))$1_$$(notdir $$(obj)))
-$1_OBJECTS       += $$(strip $$(_c_$1_objects_c) $$(_c_$1_objects_c++))
-$$(if $$(_c_$1_sources_wat),$$(error $1_SOURCES contains $$(_c_$1_sources_wat) but only *.c/*.cpp files are supported))
+# "bare" variables are are not prefixed with BUILD_{SRC,OUT}DIR.
+$1_SOURCES 				?= $$(error set $1_SOURCES to list of source files)
+_c_$1_objects			= $$(foreach obj,$$(addsuffix .o,$$(basename $$($1_SOURCES))),$$(dir $$(BUILD_OUTDIR)/$$(obj))$1_$$(notdir $$(obj)))
+_c_$1_bare_sources_c	= $$(filter %.c,$$($1_SOURCES))
+_c_$1_bare_sources_c++	= $$(filter %.cpp,$$($1_SOURCES))
+_c_$1_bare_sources_wat 	= $$(filter-out %.c %.cpp,$$($1_SOURCES))
 
-$1_COMPILER ?= $$(if $$(_c_$1_sources_c++),$$(CXX),$$(CC))
+$1_OBJECTS       		+= $$(_c_$1_objects)
+$1_COMPILER 			?= $$(if $$(_c_$1_bare_sources_c++),$$(CXX),$$(CC))
+
+$$(if $$(_c_$1_bare_sources_wat),$$(error $1_SOURCES contains $$(_c_$1_bare_sources_wat) but only *.c/*.cpp files are supported))
+$$(foreach src,$$(_c_$1_bare_sources_c),$$(eval $$(call _c_object_template,$1,$$(src))))
+$$(foreach src,$$(_c_$1_bare_sources_c++),$$(eval $$(call _c++_object_template,$1,$$(src))))
+$$(eval $$(call _c_exec_template,$1))
 
 # Per-program set of C/C++ compiler flags (deprecated).
 $1_CFLAGS   ?=
@@ -81,30 +93,20 @@ $1_CPPFLAGS ?=
 $1_CXXFLAGS ?=
 $1_LDFLAGS  ?=
 $1_LDLIBS   ?=
-$$($1_OBJECTS): CFLAGS += $$($1_CFLAGS)
-$$($1_OBJECTS): CPPFLAGS += $$($1_CPPFLAGS)
-$$($1_OBJECTS): CXXFLAGS += $$($1_CXXFLAGS)
-$1$$(EXE): LDFLAGS += $$($1_LDFLAGS)
-$1$$(EXE): LDLIBS += $$($1_LDLIBS)
-
-$$(foreach src,$$(_c_$1_sources_c),$$(eval $$(call _c_object_template,$1,$$(src))))
-$$(foreach src,$$(_c_$1_sources_c++),$$(eval $$(call _c++_object_template,$1,$$(src))))
-
-$1$$(EXE): $$($1_OBJECTS) | $$(BUILD_OUTDIR)/
-	$$(strip $$($1_COMPILER) $$(LDFLAGS) $$^ $$(LDLIBS) -o $$@)
-
-# Build this executable when building everything.
-all:: $1$$(EXE)
-
-# Clean this executable as well as all associated objects when cleaning.
-clean::
-	rm -f -- $1$$(EXE)
-	rm -f -- $$(strip $$(sort $$($1_OBJECTS)))
+$(BUILD_OUTDIR)/$1$$(EXE): CFLAGS += $$($1_CFLAGS)
+$(BUILD_OUTDIR)/$1$$(EXE): CPPFLAGS += $$($1_CPPFLAGS)
+$(BUILD_OUTDIR)/$1$$(EXE): CXXFLAGS += $$($1_CXXFLAGS)
+$(BUILD_OUTDIR)/$1$$(EXE): LDFLAGS += $$($1_LDFLAGS)
+$(BUILD_OUTDIR)/$1$$(EXE): LDLIBS += $$($1_LDLIBS)
 
 # Show various definitions when asked.
 defs::
 	@echo 'executable $1'
 	@$$(foreach var,$$(filter $1_%,$$(sort $$(.VARIABLES))),$$(if $$($$(var)),echo '  $$(patsubst $1_%,%,$$(var)): $$($$(var))';))
+ifeq ($$(BUILD_INTERNALS),1)
+	@echo 'internal variables of executable $1'
+	@$$(foreach var,$$(filter _c_$1_%,$$(sort $$(.VARIABLES))),$$(if $$($$(var)),echo '  $$(patsubst $1_%,%,$$(var)): $$($$(var))';))
+endif
 
 # Look for variables that are in the reserved space but are unrecognized.
 _c_$1_reserved=$$(filter-out $(addprefix $1_,$(_c_target_vars)),$$(filter $1_%,$$(.VARIABLES)))
@@ -119,14 +121,47 @@ endef # _c_program_template
 #
 # We use this to define all the program and library rules.
 define __build_module_C
+
+# Evaluate templates for each program and recursively for each object file.
 $(foreach prog,$(PROGRAMS),$(eval $(call _c_program_template,$(prog))))
 $(if $(LIBRARIES),$(error LIBRARIES are supported yet))
 
-# Create a directory for object files on demand.
-$(sort $(dir $(addprefix $(BUILD_OUTDIR)/,$(foreach prog,$(PROGRAMS),$($(prog)_OBJECTS))))):
-	@mkdir -p $@
+# Collect all programs, objects and directories we need to create.
+_c_programs = $(addprefix $(BUILD_OUTDIR)/,$(addsuffix $(EXE),$(PROGRAMS)))
+_c_sources  = $(addprefix $(BUILD_SRCDIR)/,$(foreach prog,$(PROGRAMS),$($(prog)_SOURCES)))
+_c_objects  = $(foreach prog,$(PROGRAMS),$($(prog)_OBJECTS))
+
+# _c_depfiles contains a .d file for each .o file that we know about.
+_c_depfiles = $(_c_objects:.o=.d)
+
+# _c_dirs contains all the directories that we can create at will and also remove when cleaning.
+# It never contains ./ as rmdir cannot remove it.
+# It also never contains any of the directories with source code (via _c_sources).
+_c_dirs     = $(filter-out ./ $(dir $(_c_sources)),$(sort $(dir $(_c_objects) $(_c_programs))))
+
+# Build all executables when building everything.
+all:: $(_c_programs)
+
+# Clean all executable and associated objects when cleaning.
+clean::
+	rm -f -- $(_c_programs)
+	rm -f -- $(_c_objects) $(_c_depfiles)
+	$(if $(_c_dirs),rmdir --ignore-fail-on-non-empty -- $(_c_dirs))
+
+ifeq ($(BUILD_INTERNALS),1)
+defs::
+	@echo 'internals from c/c++ module'
+	@$(foreach var,_c_programs _c_sources _c_objects _c_dirs,$(if $($(var)),echo '  $(var): $($(var))';))
+endif
+
+# Include generated dependency information (if it exists).
+-include $(_c_depfiles)
+
+# Create directories for object and executable files.
+$(_c_dirs):
+	mkdir -p $@
 
 # Suggest checkers depending on what source files were used.
-_configure_implicit_checkers += $(if $(foreach prog,$(PROGRAMS),$(_c_$(prog)_sources_c)),working-c-compiler)
-_configure_implicit_checkers += $(if $(foreach prog,$(PROGRAMS),$(_c_$(prog)_sources_c++)),working-c++-compiler)
+_configure_implicit_checkers += $(if $(foreach prog,$(PROGRAMS),$(_c_$(prog)_bare_sources_c)),working-c-compiler)
+_configure_implicit_checkers += $(if $(foreach prog,$(PROGRAMS),$(_c_$(prog)_bare_sources_c++)),working-c++-compiler)
 endef # __build_module_C

@@ -8,7 +8,8 @@ $(if $(strip $(__build_possible_typos)),$(warning possible typos in following va
 __build_unknown_vars = $(sort $(filter-out $(__build_known_vars),$(foreach var,$(.VARIABLES),$(if $(findstring file,$(origin $(var))),$(var)))))
 $(if $(strip $(__build_unknown_vars)),$(warning the following variables are not known to Build: $(__build_unknown_vars)))
 
-# Ensure that Buildfile is not setting VPATH
-ifeq ($(origin VPATH),file)
-$(error settinh VPATH is not allowed)
-endif
+defs::
+	@echo "build globals"
+	@echo "  CURDIR:       $(CURDIR)"
+	@echo "  BUILD_SRCDIR: $(BUILD_SRCDIR)"
+	@echo "  BUILD_OUTDIR: $(BUILD_OUTDIR)"

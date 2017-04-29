@@ -10,26 +10,26 @@ __build_known_vars += CHECKERS
 __build_known_vars += _configure_known_checkers
 
 .PRECIOUS: .configure/%/
-.configure/%/:
+$(BUILD_OUTDIR)/.configure/%/:
 	@mkdir -p $@
 
 # Pattern rules for running checkers from build distribution.
-.configure/%/checker.config.h: $(BUILD_INSTALLATION)/checkers/%.check/Buildfile | .configure/%/
-	@+build --quiet --srcdir $(dir $<) --outdir $| $(notdir $@)
-.configure/%/checker.success:  $(BUILD_INSTALLATION)/checkers/%.check/Buildfile | .configure/%/
-	@+$(if $(CHECKER_$*_OPTIONAL),-)build --quiet --srcdir $(dir $<) --outdir $| $(notdir $@)
+$(BUILD_OUTDIR)/.configure/%/checker.config.h: $(BUILD_INSTALLATION)/checkers/%.check/Buildfile | $(BUILD_OUTDIR)/.configure/%/
+	+build --srcdir $(dir $<) --outdir $| $@
+$(BUILD_OUTDIR)/.configure/%/checker.success:  $(BUILD_INSTALLATION)/checkers/%.check/Buildfile | $(BUILD_OUTDIR)/.configure/%/
+	+$(if $(CHECKER_$*_OPTIONAL),-)build --quiet --srcdir $(dir $<) --outdir $| $@
 
 # Pattern rules for running checkers from project tree.
-.configure/%/checker.config.h: $(BUILD_SRCDIR)/.build/%.check/Buildfile | .configure/%/
-	@+build --quiet --srcdir $(dir $<) --outdir $| $(notdir $@)
-.configure/%/checker.success:  $(BUILD_SRCDIR)/.build/%.check/Buildfile | .configure/%/
-	@+$(if $(CHECKER_$*_OPTIONAL),-)build --quiet --srcdir $(dir $<) --outdir $| $(notdir $@)
+$(BUILD_OUTDIR)/.configure/%/checker.config.h: $(BUILD_SRCDIR)/.build/%.check/Buildfile | $(BUILD_OUTDIR)/.configure/%/
+	@+build --quiet --srcdir $(dir $<) --outdir $| $@
+$(BUILD_OUTDIR)/.configure/%/checker.success:  $(BUILD_SRCDIR)/.build/%.check/Buildfile | $(BUILD_OUTDIR)/.configure/%/
+	@+$(if $(CHECKER_$*_OPTIONAL),-)build --quiet --srcdir $(dir $<) --outdir $| $@
 
 # Clean generated config.h file and entire .configure directory when cleaning.
 .PHONY: clean
 clean::
-	rm -f config.h
-	rm -rf .configure
+	rm -f $(BUILD_OUTDIR)/config.h
+	rm -rf $(BUILD_OUTDIR)/.configure
 
 # Print checkers used when asked for defs.
 # Explicitly mark implicit checkers so that people get the idea.
@@ -63,7 +63,7 @@ __build_known_vars += $(foreach checker,$(CHECKERS),CHECKER_$(checker)_OPTIONAL)
 $(foreach checker,$(CHECKERS),$(eval CHECKER_$(checker)_OPTIONAL ?=))
 
 # Make each object file depend on config.h
-$(foreach prog,$(PROGRAMS),$($(prog)_OBJECTS)): config.h
+$(foreach prog,$(PROGRAMS),$($(prog)_OBJECTS)): $(BUILD_OUTDIR)/config.h
 
 # Make each object file know that it can include config.h
 $(foreach prog,$(PROGRAMS),$(eval $($(prog)_OBJECTS): CPPFLAGS += -DHAVE_CONFIG_H))
@@ -74,7 +74,7 @@ ifneq ($(CHECKERS),)
 # Construct the config.h file out of partial config.h files from each checker.
 # Require each non-optional checker to succeed.
 # FIXME: the .success files are ignored by make 
-config.h: $(foreach checker,$(CHECKERS),.configure/$(checker)/checker.config.h)
+config.h: $(foreach checker,$(CHECKERS),$(BUILD_OUTDIR)/.configure/$(checker)/checker.config.h)
 	cat $^ >$@
 else
 	truncate --size 0 $@
@@ -83,6 +83,6 @@ endif
 # Add a configure target because people feel good about it.
 # It tries to get the successful status of each checker (note that the
 # appropriate target handles optionality already.
-configure:: $(sort $(foreach checker,$(CHECKERS),.configure/$(checker)/checker.success))
+configure:: $(sort $(foreach checker,$(CHECKERS),$(BUILD_OUTDIR)/.configure/$(checker)/checker.success))
 
 endef # __build_module_configure

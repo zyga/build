@@ -83,7 +83,6 @@ while [ -n "${1:-}" ]; do
 				fi
 			fi
 			_build_outdir="$(realpath -- "$2")"
-			mkdir -p -- "$_build_outdir"
 			if [ "$_build_verbose_level" -gt 0 ]; then
 				echo "build: set output directory to $_build_outdir"
 			fi
@@ -107,13 +106,6 @@ if [ "$_build_out_of_tree" -eq 0 ]; then
 	done
 	_build_srcdir="$(realpath -- "$_build_srcdir")"
 	_build_outdir="$_build_srcdir"
-else
-	if [ "$_build_verbose_level" -gt 0 ]; then
-		echo "build: set VPATH to $_build_srcdir"
-	fi
-	# Set VPATH to the location of the source code so that make can find it.
-	VPATH="$_build_srcdir"
-	export VPATH
 fi
 
 # Ensure that project root directory contains the buildfile.
@@ -126,15 +118,13 @@ if [ ! -f "$_build_srcdir/Buildfile" ]; then
 	exit 1
 fi
 
-cd -- "$_build_outdir" || exit
-
 # Check if the output is going to a terminal and relay this to the ANSI module.
 if [ -t 1 ]; then _build_isatty=yes; else _build_isatty=no; fi
 
 # Run GNU make with all the right options.
 _ANSI_isatty=$_build_isatty \
-BUILD_SRCDIR="$_build_srcdir" \
-BUILD_OUTDIR="$_build_outdir" \
+BUILD_SRCDIR=$(realpath --relative-base=$_build_srcdir --relative-to=. "$_build_srcdir") \
+BUILD_OUTDIR=$(realpath --relative-base=$_build_srcdir --relative-to=. "$_build_outdir") \
 MAKEFILES="$BUILD_INSTALLATION/core/before.mk $_build_srcdir/Buildfile $BUILD_INSTALLATION/core/after.mk " \
 	exec make \
 	$(test -z "${MAKEFLAGS:-}" && echo --jobs "$(nproc)") \

@@ -1,0 +1,30 @@
+# vim: set filetype=make :
+
+# Build uses modules to organize features.
+#
+# The C module can be included for compiling C/C++ programs.
+#
+# Run "build help" and explore available commands. Note that some commands
+# won't do anything (e.g. install) yet. You can also build a specific program
+# by specifying the target name on command line. For example try running "build
+# hello-world".
+include C
+
+PROGRAMS = hello-world
+hello-world_SOURCES = hello.c
+
+# You can also set a whole host of variables such as CPPFLAGS, CFLAGS,
+# CXXFLAGS, LDFLAGS and LDLIBS. Those can take two forms, either globally where
+# they affect everything or scoped to a target such as
+# hello-world_CFLAGS = -Wall
+
+# The compiler is automatically selected based on the source code. Adding a
+# .cpp file will switch to C++ mode. This can be also overridden by specifying.
+# Note that only the final executable will be linked with C++, each object file
+# is automatically compiled with the correct compiler.
+# hello-world_COMPILER = $(CXX)
+
+# You can also cross-compile your programs if you have an appropriate compiler
+# around. You can set the CROSS_COMPILE variable to the arch-triplet (also the
+# prefix of all the gcc cross compiler executables)
+# CROSS_COMPILE=arm-linux-gnueabihf

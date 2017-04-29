@@ -1,0 +1,5 @@
+# vim: set filetype=make :
+
+include C
+PROGRAMS = hello
+hello_SOURCES = hello.cpp

@@ -1,0 +1,50 @@
+#!/usr/bin/make -Rrf
+# vim: set filetype=make :
+
+TEMPLATE ?= build.XXXXXXXXXX
+TMPDIR ?= /tmp
+TEST := $(notdir $(CURDIR))
+
+.SHELLFLAGS = -uec
+
+.ONESHELL:
+
+.PHONY: check
+check: check-in-tree check-in-tree-to-other-dir check-out-of-tree check-out-of-tree-to-other-dir
+
+.PHONY: check-in-tree
+check-in-tree:
+	@trap "rm -f test *.o *.d" EXIT
+	build
+	./test
+	build clean
+	echo "$(TEST), in-tree: OK"
+
+.PHONY: check-in-tree-to-other-dir
+check-in-tree-to-other-dir:
+	@temp=`mktemp -d -p $(TMPDIR) $(TEMPLATE)`
+	trap "cd $(CURDIR) && rm -rf $$temp" EXIT
+	build --outdir $$temp &&
+	$$temp/test &&
+	build --outdir $$temp clean
+	echo "$(TEST), in-tree-to-other-dir: OK"
+
+.PHONY: check-out-of-tree
+check-out-of-tree:
+	@temp=`mktemp -d -p $(TMPDIR) $(TEMPLATE)`
+	trap "cd $(CURDIR) && rm -rf $$temp" EXIT
+	cd $$temp
+	build --srcdir $(CURDIR)
+	./test
+	build --srcdir $(CURDIR) clean
+	echo "$(TEST), out-of-tree: OK"
+
+.PHONY: check-out-of-tree-to-other-dir
+check-out-of-tree-to-other-dir:
+	@temp=`mktemp -d -p $(TMPDIR) $(TEMPLATE)`
+	trap "cd $(CURDIR) && rm -rf $$temp" EXIT
+	cd /
+	build --srcdir $(CURDIR) --outdir $$temp
+	$$temp/test
+	build --srcdir $(CURDIR) --outdir $$temp clean
+	echo "$(TEST), out-of-tree-to-other-dir: OK"

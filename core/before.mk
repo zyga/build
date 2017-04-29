@@ -8,7 +8,11 @@ __build_possible_typos ?=
 # Internal list of known variables / known variable patterns
 __build_known_vars += .PHONY .DEFAULT_GOAL .SUFFIXES
 __build_known_vars += __build_possible_typos __build_known_vars __build_unknown_vars __build_module_%
+__build_known_vars += BUILD_INTERNALS
 __build_known_vars += MAKEFILE_LIST MAKEFLAGS SHELL CURDIR
+
+# Set this to 1 to have `build defs` show internal variables.
+BUILD_INTERNALS ?=
 
 # Phony targets that just correspond to generic actions
 .PHONY: all check clean install defs
