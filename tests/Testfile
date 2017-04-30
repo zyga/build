@@ -1,7 +1,7 @@
 #!/usr/bin/make -sRrf
 # vim: set filetype=make :
 
-subdirs = basic-c basic-cpp subdir-c
+subdirs = basic-c basic-cpp subdir-c subdir-cpp
 
 .PHONY: check
 check:
