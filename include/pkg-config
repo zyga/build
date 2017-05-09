@@ -33,7 +33,7 @@ defs::
 	@echo '    libs:   $$(_pkg_config_$1_dynamic_libs)'
 	@echo '  for static linking:'
 	@echo '    cflags: $$(_pkg_config_$1_static_cflags)'
-	@echo '    libs :  $$(_pkg_config_$1_static_libs)'
+	@echo '    libs:   $$(_pkg_config_$1_static_libs)'
 
 endef # _pkg_config_module_template
 
