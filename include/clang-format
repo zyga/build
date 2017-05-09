@@ -1,0 +1,15 @@
+# vim: set filetype=make :
+## Build module for using clang-format for formatting sources consistently.
+$(if $(findstring __build_module_C,$(.VARIABLES)),,$(error please import the C module first))
+$(if $(shell which clang-format),,$(error please install the clang-format program))
+
+__build_known_vars += CLANG_FORMAT_STYLE
+
+define __build_module_clang_format
+
+CLANG_FORMAT_STYLE ?= WebKit
+
+.PHONY: fmt
+fmt:: $(_c_sources)
+	clang-format --style=$(CLANG_FORMAT_STYLE) -i $^
+endef
