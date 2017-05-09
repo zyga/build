@@ -77,7 +77,7 @@ $1_SOURCES 				?= $$(error set $1_SOURCES to list of source files)
 _c_$1_objects			= $$(foreach obj,$$(addsuffix .o,$$(basename $$($1_SOURCES))),$$(dir $$(BUILD_OUTDIR)/$$(obj))$1_$$(notdir $$(obj)))
 _c_$1_bare_sources_c	= $$(filter %.c,$$($1_SOURCES))
 _c_$1_bare_sources_c++	= $$(filter %.cpp,$$($1_SOURCES))
-_c_$1_bare_sources_wat 	= $$(filter-out %.c %.cpp,$$($1_SOURCES))
+_c_$1_bare_sources_wat 	= $$(filter-out %.c %.cpp %.h,$$($1_SOURCES))
 
 $1_OBJECTS       		+= $$(_c_$1_objects)
 $1_COMPILER 			?= $$(if $$(_c_$1_bare_sources_c++),$$(CXX),$$(CC))
